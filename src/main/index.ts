@@ -1,0 +1,195 @@
+import { app, BrowserWindow, Menu, ipcMain } from 'electron'
+import { join, dirname } from 'node:path'
+import { spawnSync } from 'node:child_process'
+import {
+  loadAppConfig,
+  saveAppConfig,
+  getCenteredBounds,
+  getConfigPath,
+} from './config'
+import type { AppConfig } from './config'
+import { Logger } from './logger'
+
+// 修复 Windows 控制台编码，确保中文日志正常显示
+if (process.platform === 'win32') {
+  spawnSync('chcp', ['65001'], { stdio: 'ignore' })
+}
+
+/** 主窗口实例 */
+let win: BrowserWindow | null = null
+/** 全局日志实例 */
+let logger: Logger | null = null
+
+/**
+ * 获取日志输出目录的绝对路径
+ *
+ * - 已配置 filePath：相对于应用根目录或 exe 目录解析
+ * - 打包模式未配置：默认使用 exe 旁边的 logs 目录
+ * - 开发模式未配置：不输出日志文件
+ */
+function getLogDir(cfg: AppConfig): string {
+  if (cfg.logging.filePath) {
+    const baseDir = app.isPackaged
+      ? dirname(app.getPath('exe'))
+      : app.getAppPath()
+    return join(baseDir, cfg.logging.filePath)
+  }
+  if (app.isPackaged) {
+    return join(dirname(app.getPath('exe')), 'logs')
+  }
+  return ''
+}
+
+/**
+ * 创建主窗口
+ *
+ * 读取配置恢复窗口状态，注册快捷键（F12/Ctrl+Shift+I 打开 DevTools，
+ * Ctrl+R 强制刷新），监听关闭事件保存窗口位置。
+ */
+function createWindow(cfg: AppConfig): void {
+  // 首次启动时自动居中
+  const bounds = getCenteredBounds(cfg.windowBounds)
+
+  // 开发模式窗口标题追加标识
+  const title = app.isPackaged ? '柯伊伯方盒' : '柯伊伯方盒 - [DevMode]'
+
+  win = new BrowserWindow({
+    x: bounds.x,
+    y: bounds.y,
+    width: bounds.width,
+    height: bounds.height,
+    minWidth: 1280,
+    minHeight: 720,
+    title,
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  })
+
+  // 移除默认菜单栏
+  Menu.setApplicationMenu(null)
+
+  // 阻止页面 <title> 覆盖窗口标题
+  win.webContents.on('page-title-updated', (event) => {
+    event.preventDefault()
+  })
+
+  // 注册开发快捷键（仅开发模式生效，打包后禁用）
+  win.webContents.on('before-input-event', (_event, input) => {
+    if (app.isPackaged) return
+    // F12 或 Ctrl+Shift+I 打开/关闭 DevTools
+    if (
+      input.key === 'F12' ||
+      (input.control && input.shift && input.key.toLowerCase() === 'i')
+    ) {
+      win?.webContents.toggleDevTools()
+    }
+    // Ctrl+R 强制刷新页面（忽略缓存）
+    if (input.control && input.key.toLowerCase() === 'r') {
+      win?.webContents.reloadIgnoringCache()
+    }
+  })
+
+  // 恢复窗口全屏/最大化状态
+  if (cfg.isFullScreen) {
+    win.setFullScreen(true)
+  } else if (cfg.isMaximized) {
+    win.maximize()
+  }
+
+  // 窗口尺寸变更时即时写回配置文件（500ms 防抖）
+  let resizeTimer: ReturnType<typeof setTimeout> | null = null
+  win.on('resize', () => {
+    if (!win) return
+    if (resizeTimer) clearTimeout(resizeTimer)
+    resizeTimer = setTimeout(() => {
+      const curBounds = win!.getBounds()
+      const freshCfg = loadAppConfig()
+      freshCfg.windowBounds = { width: curBounds.width, height: curBounds.height }
+      saveAppConfig(freshCfg)
+      resizeTimer = null
+    }, 500)
+  })
+
+  // 关闭窗口时重新加载配置并保存窗口状态，避免覆盖运行时其他变更（如侧边栏状态）
+  win.on('close', () => {
+    if (!win) return
+    const freshCfg = loadAppConfig()
+    const currentBounds = win.getBounds()
+    const isMaximized = win.isMaximized()
+    const isFullScreen = win.isFullScreen()
+    // 仅保存上次正常窗口的宽高，位置由启动时自动居中计算
+    if (!isFullScreen && !isMaximized) {
+      freshCfg.windowBounds = {
+        width: currentBounds.width,
+        height: currentBounds.height,
+      }
+    }
+    freshCfg.isFullScreen = isFullScreen
+    freshCfg.isMaximized = isMaximized
+    saveAppConfig(freshCfg)
+  })
+
+  // 根据运行模式加载不同入口
+  if (app.isPackaged) {
+    win.loadFile(join(__dirname, '../renderer/index.html'))
+  } else {
+    win.loadURL(process.env.ELECTRON_RENDERER_URL!)
+  }
+
+  logger.info('窗口创建完成')
+}
+
+/** 注册 IPC 处理器，供渲染进程读写配置 */
+function registerIpcHandlers(): void {
+  ipcMain.handle('config:get', () => loadAppConfig())
+
+  ipcMain.handle('config:save', (_event, config: AppConfig) => {
+    saveAppConfig(config)
+  })
+
+  ipcMain.handle('config:path', () => getConfigPath())
+
+  ipcMain.handle('config:versions', () => {
+    const vers = {
+      app: app.getVersion() || '0.0.0',
+      electron: process.versions.electron || '',
+      node: process.versions.node || '',
+      chrome: process.versions.chrome || '',
+      v8: process.versions.v8 || '',
+    }
+    logger?.info('返回版本信息', JSON.stringify(vers))
+    return vers
+  })
+}
+
+// 关闭 Electron 沙盒模式
+app.commandLine.appendSwitch('no-sandbox')
+
+// 等待应用就绪后尽早加载配置并初始化日志，再创建窗口
+app.whenReady().then(() => {
+  const cfg = loadAppConfig()
+
+  // 注入环境变量到 process.env
+  if (cfg.env) {
+    for (const [key, value] of Object.entries(cfg.env)) {
+      process.env[key] = value
+    }
+  }
+
+  logger = new Logger(cfg.logging, getLogDir(cfg))
+  logger.info('kuiper-box 启动')
+
+  registerIpcHandlers()
+  createWindow(cfg)
+})
+
+// 所有窗口关闭时退出应用（macOS 除外）
+app.on('window-all-closed', () => {
+  logger?.close()
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
+})

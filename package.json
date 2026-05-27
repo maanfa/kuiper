@@ -1,0 +1,57 @@
+{
+  "name": "kuiper-box",
+  "version": "0.1.0",
+  "private": true,
+  "description": "柯伊伯方盒 - Electron desktop application",
+  "license": "MIT",
+  "author": "maanfa",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maanfa/kuiper"
+  },
+  "type": "module",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "chcp 65001 > nul && electron-vite dev",
+    "build": "tsx scripts/build.ts",
+    "dist": "tsx scripts/dist.ts",
+    "lint": "oxlint",
+    "fmt": "oxfmt",
+    "clean": "tsx scripts/clean.ts build",
+    "clean:out": "tsx scripts/clean.ts out",
+    "clean:release": "tsx scripts/clean.ts release",
+    "clean:cache": "tsx scripts/clean.ts cache",
+    "clean:all": "tsx scripts/clean.ts all"
+  },
+  "dependencies": {
+    "@vicons/ionicons5": "^0.13.0",
+    "pinia": "^3.0.4",
+    "yaml": "^2.8.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.7",
+    "electron": "^42.3.0",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^5.0.0",
+    "naive-ui": "^2.44.1",
+    "oxfmt": "^0.52.0",
+    "oxlint": "^1.67.0",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.14",
+    "vue": "^3.5.35",
+    "vue-router": "^5.0.7"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "electron-winstaller",
+      "electron"
+    ],
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "electron-vite>vite": "8"
+      }
+    }
+  }
+}

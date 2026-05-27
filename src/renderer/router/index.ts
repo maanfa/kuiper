@@ -1,0 +1,27 @@
+import { createRouter, createWebHashHistory } from 'vue-router'
+import HomeView from '../views/HomeView.vue'
+
+// 创建路由实例，使用 hash 模式以兼容 Electron file:// 协议
+const router = createRouter({
+  history: createWebHashHistory(),
+  routes: [
+    {
+      path: '/',
+      component: HomeView,
+      children: [
+        {
+          path: '',
+          name: 'welcome',
+          component: () => import('../views/WelcomeView.vue'),
+        },
+        {
+          path: 'terrain-tile',
+          name: 'terrainTile',
+          component: () => import('../views/TerrainTileView.vue'),
+        },
+      ],
+    },
+  ],
+})
+
+export default router
