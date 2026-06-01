@@ -68,6 +68,19 @@
           </NSpace>
         </NCard>
 
+        <NCard title="关闭行为" size="small" class="section">
+          <NRadioGroup v-model:value="store.form.closeBehavior" name="close-behavior">
+            <NSpace vertical size="small">
+              <NRadio value="ask">每次都提示</NRadio>
+              <NRadio value="exit">直接退出</NRadio>
+              <NRadio value="hide">隐藏到任务栏</NRadio>
+            </NSpace>
+          </NRadioGroup>
+          <NText depth="3" style="font-size: 11px; margin-top: 8px; display: block">
+            点击窗口关闭按钮时的默认行为。
+          </NText>
+        </NCard>
+
         <NCard title="环境变量" size="small" class="section">
           <EnvVarForm v-model="store.form.env" />
         </NCard>
@@ -109,6 +122,8 @@ import {
   NH2,
   NIcon,
   NInput,
+  NRadio,
+  NRadioGroup,
   NScrollbar,
   NSelect,
   NSpace,

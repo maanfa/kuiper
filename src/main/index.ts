@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain } from 'electron'
+import { app, BrowserWindow, Tray, nativeImage, Menu, ipcMain } from 'electron'
 import { join, dirname } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import {
@@ -7,7 +7,7 @@ import {
   getCenteredBounds,
   getConfigPath,
 } from './config'
-import type { AppConfig } from './config'
+import type { AppConfig, CloseBehavior } from './config'
 import { Logger } from './logger'
 
 // 修复 Windows 控制台编码，确保中文日志正常显示
@@ -17,8 +17,12 @@ if (process.platform === 'win32') {
 
 /** 主窗口实例 */
 let win: BrowserWindow | null = null
+/** 任务栏托盘实例 */
+let tray: Tray | null = null
 /** 全局日志实例 */
 let logger: Logger | null = null
+/** 是否强制退出（用于跳过关闭拦截） */
+let forceQuit = false
 
 /**
  * 获取日志输出目录的绝对路径
@@ -76,6 +80,11 @@ function createWindow(cfg: AppConfig): void {
     event.preventDefault()
   })
 
+  // 页面加载完成后显式设置标题，确保 DevMode 后缀生效
+  win.webContents.on('did-finish-load', () => {
+    win?.setTitle(title)
+  })
+
   // 注册开发快捷键（仅开发模式生效，打包后禁用）
   win.webContents.on('before-input-event', (_event, input) => {
     if (app.isPackaged) return
@@ -113,23 +122,33 @@ function createWindow(cfg: AppConfig): void {
     }, 500)
   })
 
-  // 关闭窗口时重新加载配置并保存窗口状态，避免覆盖运行时其他变更（如侧边栏状态）
-  win.on('close', () => {
-    if (!win) return
-    const freshCfg = loadAppConfig()
+  // 关闭窗口时检查关闭行为配置
+  win.on('close', (e) => {
+    if (!win || forceQuit) return
+    const curCfg = loadAppConfig()
+    // 仅保存上次正常窗口的宽高，位置由启动时自动居中计算
     const currentBounds = win.getBounds()
     const isMaximized = win.isMaximized()
     const isFullScreen = win.isFullScreen()
-    // 仅保存上次正常窗口的宽高，位置由启动时自动居中计算
     if (!isFullScreen && !isMaximized) {
-      freshCfg.windowBounds = {
+      curCfg.windowBounds = {
         width: currentBounds.width,
         height: currentBounds.height,
       }
     }
-    freshCfg.isFullScreen = isFullScreen
-    freshCfg.isMaximized = isMaximized
-    saveAppConfig(freshCfg)
+    curCfg.isFullScreen = isFullScreen
+    curCfg.isMaximized = isMaximized
+    saveAppConfig(curCfg)
+
+    if (curCfg.closeBehavior === 'exit') return
+    if (curCfg.closeBehavior === 'hide') {
+      e.preventDefault()
+      win.hide()
+      return
+    }
+    // closeBehavior === 'ask'
+    e.preventDefault()
+    win.webContents.send('close:prompt')
   })
 
   // 根据运行模式加载不同入口
@@ -139,7 +158,49 @@ function createWindow(cfg: AppConfig): void {
     win.loadURL(process.env.ELECTRON_RENDERER_URL!)
   }
 
-  logger.info('窗口创建完成')
+  logger?.info('窗口创建完成')
+}
+
+/**
+ * 创建系统任务栏托盘
+ *
+ * 单击无响应，双击恢复/显示主窗口，右键弹出上下文菜单。
+ */
+function createTray(): void {
+  // 程序化生成 16x16 托盘图标
+  const icon = nativeImage.createFromDataURL(
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWklEQVQ4y2Ng+M9AAWBigAIwkwqGg8IAJgr1M1HbAKrqB9IMkkkGqhsA0kymflo1gKodIJONlTbDxJECNBsAAjRaSDI2QGT8oWhVABKg6QAQQKMBADf8Dx8dMqBuAAAAAElFTkSuQmCC',
+  )
+  tray = new Tray(icon)
+  tray.setToolTip(app.isPackaged ? '柯伊伯方盒' : '柯伊伯方盒 - [DevMode]')
+
+  tray.on('double-click', () => {
+    if (!win) return
+    if (win.isMinimized()) win.restore()
+    if (!win.isVisible()) win.show()
+    win.focus()
+  })
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '打开主界面',
+      click: () => {
+        if (!win) return
+        if (win.isMinimized()) win.restore()
+        if (!win.isVisible()) win.show()
+        win.focus()
+      },
+    },
+    { type: 'separator' },
+    {
+      label: '退出',
+      click: () => {
+        forceQuit = true
+        app.quit()
+      },
+    },
+  ])
+  tray.setContextMenu(contextMenu)
 }
 
 /** 注册 IPC 处理器，供渲染进程读写配置 */
@@ -163,6 +224,24 @@ function registerIpcHandlers(): void {
     logger?.info('返回版本信息', JSON.stringify(vers))
     return vers
   })
+
+  ipcMain.on(
+    'close:result',
+    (_event, data: { action: 'exit' | 'hide', remember: boolean }) => {
+      if (data.remember) {
+        const cfg = loadAppConfig()
+        cfg.closeBehavior = data.action as CloseBehavior
+        saveAppConfig(cfg)
+      }
+      if (data.action === 'exit') {
+        forceQuit = true
+        app.quit()
+      } else {
+        // 推迟到下一个 macrotask，确保渲染进程已完成 v-if 销毁弹窗并重绘
+        setTimeout(() => win?.hide(), 0)
+      }
+    },
+  )
 }
 
 // 关闭 Electron 沙盒模式
@@ -184,6 +263,7 @@ app.whenReady().then(() => {
 
   registerIpcHandlers()
   createWindow(cfg)
+  createTray()
 })
 
 // 所有窗口关闭时退出应用（macOS 除外）

@@ -23,9 +23,11 @@ export const useSettingsStore = defineStore('settings', () => {
   const form = reactive<{
     logging: { level: LogLevel, filePath?: string }
     env: EnvEntry[]
+    closeBehavior: CloseBehavior
   }>({
     logging: { level: 'info' },
     env: [],
+    closeBehavior: 'ask',
   })
 
   // 防抖定时器
@@ -37,7 +39,7 @@ export const useSettingsStore = defineStore('settings', () => {
     saveTimer = setTimeout(() => doSave(), 400)
   }
 
-  // 表单变更自动保存
+  // 表单变更自动保存（日志/环境变量使用防抖）
   watch(
     () => ({ level: form.logging.level, filePath: form.logging.filePath }),
     () => { if (loaded.value) debouncedSave() },
@@ -45,6 +47,17 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(
     () => form.env.map(e => `${e.key}=${e.value}`).join(','),
     () => { if (loaded.value) debouncedSave() },
+  )
+
+  // 关闭行为变更即时写入 yml，不等待防抖
+  watch(
+    () => form.closeBehavior,
+    async (val) => {
+      if (!loaded.value || !api) return
+      const cfg = await api.getConfig()
+      cfg.closeBehavior = val
+      await api.saveConfig(cfg)
+    },
   )
 
   /** 从主进程加载配置 */
@@ -57,6 +70,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
       form.logging.level = cfg.logging.level || 'info'
       form.logging.filePath = cfg.logging.filePath
+      form.closeBehavior = cfg.closeBehavior || 'ask'
 
       if (cfg.env) {
         form.env = Object.entries(cfg.env).map(([key, value], i) => ({

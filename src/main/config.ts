@@ -15,12 +15,16 @@ export interface LoggingConfig {
   filePath?: string
 }
 
+/** 关闭行为 */
+export type CloseBehavior = 'ask' | 'exit' | 'hide'
+
 /** 应用完整配置 */
 export interface AppConfig {
   windowBounds: WindowBounds
   isFullScreen: boolean
   isMaximized: boolean
   sidebarCollapsed?: boolean
+  closeBehavior: CloseBehavior
   logging: LoggingConfig
   env?: Record<string, string>
 }
@@ -43,6 +47,7 @@ const DEFAULT_CONFIG: AppConfig = {
   isFullScreen: false,
   isMaximized: false,
   sidebarCollapsed: false,
+  closeBehavior: 'ask',
   logging: { level: 'info' },
   env: {},
 }

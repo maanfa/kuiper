@@ -15,12 +15,22 @@ interface WindowBounds {
   height: number
 }
 
+/** 关闭行为 */
+type CloseBehavior = 'ask' | 'exit' | 'hide'
+
+/** 关闭结果 */
+interface CloseResult {
+  action: 'exit' | 'hide'
+  remember: boolean
+}
+
 /** 应用配置 */
 interface AppConfig {
   windowBounds: WindowBounds
   isFullScreen: boolean
   isMaximized: boolean
   sidebarCollapsed?: boolean
+  closeBehavior: CloseBehavior
   logging: LoggingConfig
   env?: Record<string, string>
 }
@@ -40,6 +50,8 @@ interface ElectronAPI {
   saveConfig: (config: AppConfig) => Promise<void>
   getConfigPath: () => Promise<string>
   getVersions: () => Promise<VersionInfo>
+  onClosePrompt: (cb: () => void) => () => void
+  sendCloseResult: (data: CloseResult) => void
 }
 
 interface Window {

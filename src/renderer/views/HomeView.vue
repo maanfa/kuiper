@@ -14,6 +14,12 @@
       <main class="main-content">
         <RouterView />
         <SettingsPanel v-if="uiStore.showSettings" />
+        <ClosePromptDialog
+          v-if="showClosePrompt"
+          :show="showClosePrompt"
+          @confirm="handleCloseConfirm"
+          @close="showClosePrompt = false"
+        />
       </main>
     </div>
     <StatusBar
@@ -24,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useSidebarStore } from '../stores/sidebar'
 import { useUiStore } from '../stores/ui'
@@ -32,6 +38,7 @@ import Sidebar from '../components/Sidebar.vue'
 import ToggleButton from '../components/ToggleButton.vue'
 import StatusBar from '../components/StatusBar.vue'
 import SettingsPanel from '../components/SettingsPanel.vue'
+import ClosePromptDialog from '../components/ClosePromptDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -41,7 +48,12 @@ const uiStore = useUiStore()
 /** 当前路由路径，用于高亮状态 */
 const currentRoute = ref(route.path)
 
-/** 从持久化配置恢复侧边栏状态 */
+/** 关闭询问弹窗显示状态 */
+const showClosePrompt = ref(false)
+/** 关闭监听清理函数 */
+let cleanupCloseListener: (() => void) | null = null
+
+/** 从持久化配置恢复侧边栏状态，注册关闭询问监听 */
 onMounted(async () => {
   if (!window.electronAPI) return
   try {
@@ -52,6 +64,14 @@ onMounted(async () => {
   } catch (err) {
     console.error('加载侧边栏配置失败:', err)
   }
+
+  cleanupCloseListener = window.electronAPI.onClosePrompt(() => {
+    showClosePrompt.value = true
+  })
+})
+
+onUnmounted(() => {
+  cleanupCloseListener?.()
 })
 
 /** 侧边栏状态变更时写回配置文件 */
@@ -79,6 +99,12 @@ router.afterEach((to) => {
   currentRoute.value = to.path
   uiStore.closeSettings()
 })
+
+/** 处理关闭询问弹窗的选择 */
+function handleCloseConfirm(result: CloseResult): void {
+  showClosePrompt.value = false
+  window.electronAPI?.sendCloseResult(result)
+}
 </script>
 
 <style scoped>

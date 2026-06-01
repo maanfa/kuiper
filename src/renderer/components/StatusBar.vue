@@ -10,7 +10,7 @@
           @click="$emit('toggleSettings')"
         >
           <template #icon>
-            <NIcon size="14" :color="active ? undefined : undefined">
+            <NIcon size="14">
               <SettingsOutline />
             </NIcon>
           </template>
@@ -43,9 +43,15 @@ defineEmits<{
   line-height: 28px;
   background: #fafafa;
   border-top: 1px solid #e8e8e8;
-  padding: 0 12px;
+  padding: 0 8px 0 12px;
   font-size: 12px;
   color: #999;
   flex-shrink: 0;
+}
+
+.status-bar :deep(.n-button) {
+  height: 28px;
+  width: 28px;
+  padding: 0;
 }
 </style>
