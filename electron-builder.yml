@@ -5,11 +5,15 @@ directories:
 electronDownload:
   cache: .cache/electron
 win:
+  icon: resources/icon.png
   target:
     - target: nsis
       arch:
         - x64
   signAndEditExecutable: false
+extraResources:
+  - from: resources/icon.png
+    to: icon.png
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

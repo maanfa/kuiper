@@ -25,6 +25,18 @@ let logger: Logger | null = null
 let forceQuit = false
 
 /**
+ * 获取应用图标文件的绝对路径
+ *
+ * - 开发模式：相对于项目根目录的 resources/icon.png
+ * - 打包模式：相对于 exe 目录的 resources/icon.png
+ */
+function getIconPath(): string {
+  return app.isPackaged
+    ? join(dirname(app.getPath('exe')), 'resources', 'icon.png')
+    : join(app.getAppPath(), 'resources', 'icon.png')
+}
+
+/**
  * 获取日志输出目录的绝对路径
  *
  * - 已配置 filePath：相对于应用根目录或 exe 目录解析
@@ -65,6 +77,7 @@ function createWindow(cfg: AppConfig): void {
     minWidth: 1280,
     minHeight: 720,
     title,
+    icon: getIconPath(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -167,10 +180,7 @@ function createWindow(cfg: AppConfig): void {
  * 单击无响应，双击恢复/显示主窗口，右键弹出上下文菜单。
  */
 function createTray(): void {
-  // 程序化生成 16x16 托盘图标
-  const icon = nativeImage.createFromDataURL(
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWklEQVQ4y2Ng+M9AAWBigAIwkwqGg8IAJgr1M1HbAKrqB9IMkkkGqhsA0kymflo1gKodIJONlTbDxJECNBsAAjRaSDI2QGT8oWhVABKg6QAQQKMBADf8Dx8dMqBuAAAAAElFTkSuQmCC',
-  )
+  const icon = nativeImage.createFromPath(getIconPath()).resize({ width: 32, height: 32 })
   tray = new Tray(icon)
   tray.setToolTip(app.isPackaged ? '柯伊伯方盒' : '柯伊伯方盒 - [DevMode]')
 
