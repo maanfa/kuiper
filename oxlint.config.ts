@@ -17,5 +17,12 @@ export default defineConfig({
       files: ['*.vue'],
       rules: {},
     },
+    {
+      // Node.js 后台代码使用了 worker_threads 的 parentPort.postMessage()，不是浏览器 window.postMessage，无需 targetOrigin 参数
+      files: ['src/main/**/*.ts', 'scripts/**/*.ts'],
+      rules: {
+        'unicorn/require-post-message-target-origin': 'off',
+      },
+    },
   ],
 })

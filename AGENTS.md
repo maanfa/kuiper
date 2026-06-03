@@ -31,6 +31,7 @@
 - 跨组件共享的状态使用 Pinia store（`stores/`）
 - 可复用逻辑封装为 Vue composable（必要时）
 - 全局 UI 状态（如面板显隐、侧边栏折叠）统一放在 Pinia store 中，不在组件内用 `ref` 管理
+- 所有图标按钮（无文字仅图标）必须包裹 `NTooltip` 提供文字提示
 
 ## 项目约定
 
@@ -67,6 +68,27 @@
 - 日志文件按天滚动（`app-YYYY-MM-DD.log`）
 - 编码统一使用 UTF-8，确保中文不乱码
 - 打包模式下仅当 yml 中配置了 `logging.filePath` 时才输出日志文件
+
+## 事件系统
+
+- 主进程中需要 EventEmitter 时，使用社区包 `eventemitter3`，不使用 Node.js 内置 `events` 模块
+
+## VerticalSplit 组件规范
+
+- 分隔条为辅助视觉元素，宽度 4px，高度 10%（`align-self: center` 居中悬浮），圆角 2px
+- 默认背景色 `#d9d9d9`（始终可见），hover 变为 `#36ad6a`
+- 面板间距由分隔条的 `margin: 0 8px` 控制（共 20px），不使用 flex `gap`，以便精确匹配容器内边距
+- 左右面板不设置 `overflow: hidden`，避免裁切子元素的圆角（如 border-radius 卡片）
+- 分隔条容器（`.vertical-split`）设 `overflow: hidden` 防整体溢出
+- 左侧面板 `flex-shrink: 0`，右侧面板 `flex: 1; min-width: 0`
+- 拖拽逻辑扣除分隔条占宽（4 + 8×2 = 20px）后计算比例，左右最小宽度通过 `minLeftWidth` / `minRightWidth` props 控制（默认各 200px）
+
+## Plan 输出规范
+
+- Plan 仅包含**步骤列表**和**设计思路**，不输出具体 API 签名、代码片段、组件模板等实现细节
+- 步骤列表标注操作类型（新建/修改）和所属层级（主进程/渲染/共享）
+- 设计思路体现架构权衡、组件职责划分、数据流方向
+- 实现细节（函数签名、props 定义、CSS 样式等）留到执行阶段按项目约定自行处理
 
 ## 沟通语言
 

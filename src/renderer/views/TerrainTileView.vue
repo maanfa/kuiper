@@ -1,19 +1,56 @@
 <template>
-  <div class="terrain-tile">
-    <NH2>地形切片工具</NH2>
-    <NText depth="2">支持全球高程数据的多级切片处理，可高效生成 TMS/WMTS 标准瓦片，适用于 Cesium、Mapbox 等三维地球引擎的地形渲染场景。</NText>
-    <NDivider />
-    <NText depth="3">功能开发中，敬请期待。</NText>
+  <div class="generator-view">
+    <ToolHeader>
+      <template #title>地形切片生成器</template>
+    </ToolHeader>
+
+    <VerticalSplit
+      :initial-ratio="0.45"
+      :min-left-width="300"
+      :min-right-width="600"
+      class="generator-body"
+    >
+      <template #left>
+        <div class="left-panel" />
+      </template>
+      <template #right>
+        <LogOutput ref="logRef" />
+      </template>
+    </VerticalSplit>
   </div>
 </template>
 
 <script setup lang="ts">
-import { NH2, NText, NDivider } from 'naive-ui'
+import { ref } from 'vue'
+import ToolHeader from '../components/ToolHeader.vue'
+import VerticalSplit from '../components/VerticalSplit.vue'
+import LogOutput from '../components/LogOutput.vue'
+
+const logRef = ref<InstanceType<typeof LogOutput> | null>(null)
 </script>
 
 <style scoped>
-.terrain-tile {
-  padding: 32px;
-  max-width: 720px;
+.generator-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.generator-body {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+  padding: 12px;
+  background: #f5f5f5;
+}
+
+.left-panel {
+  height: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
 }
 </style>

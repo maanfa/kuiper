@@ -6,19 +6,19 @@
   >
     <NIcon size="20" class="card-icon"><Component :is="icon" /></NIcon>
     <span class="card-title">{{ title }}</span>
-    <NTooltip trigger="hover" placement="right">
+    <NPopover trigger="click" placement="right" :width="280">
       <template #trigger>
         <NIcon size="13" class="info-icon">
           <InformationCircleOutline />
         </NIcon>
       </template>
-      {{ description }}
-    </NTooltip>
+      <div class="popover-desc">{{ description }}</div>
+    </NPopover>
   </div>
 </template>
 
 <script setup lang="ts">
-import { NIcon, NTooltip } from 'naive-ui'
+import { NIcon, NPopover } from 'naive-ui'
 import { InformationCircleOutline } from '@vicons/ionicons5'
 import type { Component } from 'vue'
 
@@ -79,5 +79,11 @@ defineEmits<{
 
 .function-card:hover .info-icon {
   color: #aaa;
+}
+
+.popover-desc {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #555;
 }
 </style>

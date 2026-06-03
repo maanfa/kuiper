@@ -25,6 +25,8 @@
   },
   "dependencies": {
     "@vicons/ionicons5": "^0.13.0",
+    "@vueuse/core": "^14.3.0",
+    "eventemitter3": "^5.0.4",
     "pinia": "^3.0.4",
     "yaml": "^2.8.2"
   },

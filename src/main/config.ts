@@ -18,6 +18,11 @@ export interface LoggingConfig {
 /** 关闭行为 */
 export type CloseBehavior = 'ask' | 'exit' | 'hide'
 
+/** 任务系统配置 */
+export interface TaskConfig {
+  workerCount: number
+}
+
 /** 应用完整配置 */
 export interface AppConfig {
   windowBounds: WindowBounds
@@ -26,6 +31,7 @@ export interface AppConfig {
   sidebarCollapsed?: boolean
   closeBehavior: CloseBehavior
   logging: LoggingConfig
+  task: TaskConfig
   env?: Record<string, string>
 }
 
@@ -49,6 +55,7 @@ const DEFAULT_CONFIG: AppConfig = {
   sidebarCollapsed: false,
   closeBehavior: 'ask',
   logging: { level: 'info' },
+  task: { workerCount: 3 },
   env: {},
 }
 

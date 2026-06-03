@@ -1,6 +1,7 @@
-import { app, BrowserWindow, Tray, nativeImage, Menu, ipcMain } from 'electron'
+import { app, BrowserWindow, Tray, nativeImage, Menu, ipcMain, dialog, shell } from 'electron'
 import { join, dirname } from 'node:path'
 import { spawnSync } from 'node:child_process'
+import { writeFileSync } from 'node:fs'
 import {
   loadAppConfig,
   saveAppConfig,
@@ -9,6 +10,8 @@ import {
 } from './config'
 import type { AppConfig, CloseBehavior } from './config'
 import { Logger } from './logger'
+import { TaskManager } from './task/TaskManager'
+import { IPC } from '../shared/ipc-channels'
 
 // 修复 Windows 控制台编码，确保中文日志正常显示
 if (process.platform === 'win32') {
@@ -97,6 +100,9 @@ function createWindow(cfg: AppConfig): void {
   win.webContents.on('did-finish-load', () => {
     win?.setTitle(title)
   })
+
+  // 将窗口注册到 TaskManager
+  TaskManager.getInstance().setWindow(win)
 
   // 注册开发快捷键（仅开发模式生效，打包后禁用）
   win.webContents.on('before-input-event', (_event, input) => {
@@ -215,6 +221,8 @@ function createTray(): void {
 
 /** 注册 IPC 处理器，供渲染进程读写配置 */
 function registerIpcHandlers(): void {
+  const taskManager = TaskManager.getInstance()
+
   ipcMain.handle('config:get', () => loadAppConfig())
 
   ipcMain.handle('config:save', (_event, config: AppConfig) => {
@@ -247,11 +255,65 @@ function registerIpcHandlers(): void {
         forceQuit = true
         app.quit()
       } else {
-        // 推迟到下一个 macrotask，确保渲染进程已完成 v-if 销毁弹窗并重绘
         setTimeout(() => win?.hide(), 0)
       }
     },
   )
+
+  // Task API
+  ipcMain.handle(IPC.TASK_START, (_event, config) => {
+    return taskManager.start(config)
+  })
+
+  ipcMain.handle(IPC.TASK_CANCEL, (_event, taskId: string) => {
+    return taskManager.cancel(taskId)
+  })
+
+  // Dialog API
+  ipcMain.handle(IPC.DIALOG_OPEN_DIR, async () => {
+    if (!win) return null
+    const result = await dialog.showOpenDialog(win, {
+      properties: ['openDirectory'],
+    })
+    return result.canceled ? null : result.filePaths[0]
+  })
+
+  ipcMain.handle(IPC.DIALOG_SAVE_FILE, async (_event, defaultName: string) => {
+    if (!win) return null
+    const result = await dialog.showSaveDialog(win, {
+      defaultPath: defaultName,
+      filters: [{ name: 'CZTR 地形包', extensions: ['cztr'] }],
+    })
+    return result.canceled ? null : result.filePath
+  })
+
+  ipcMain.handle(IPC.DIALOG_OPEN_FILE, async (_event, filters: { name: string, extensions: string[] }[]) => {
+    if (!win) return null
+    const result = await dialog.showOpenDialog(win, {
+      properties: ['openFile'],
+      filters,
+    })
+    return result.canceled ? null : result.filePaths[0]
+  })
+
+  ipcMain.handle(IPC.DIALOG_SAVE_TEXT, async (_event, content: string, defaultName: string) => {
+    if (!win) return false
+    const result = await dialog.showSaveDialog(win, {
+      defaultPath: defaultName,
+      filters: [{ name: '文本文件', extensions: ['txt', 'log'] }],
+    })
+    if (result.canceled || !result.filePath) return false
+    try {
+      writeFileSync(result.filePath, content, 'utf-8')
+      return true
+    } catch {
+      return false
+    }
+  })
+
+  ipcMain.handle(IPC.SHELL_OPEN_PATH, (_event, targetPath: string) => {
+    shell.openPath(targetPath)
+  })
 }
 
 // 关闭 Electron 沙盒模式

@@ -19,6 +19,11 @@ const router = createRouter({
           name: 'terrainTile',
           component: () => import('../views/TerrainTileView.vue'),
         },
+        {
+          path: 'terrain-tile-converter',
+          name: 'terrainTileConverter',
+          component: () => import('../views/TerrainTileConverterView.vue'),
+        },
       ],
     },
   ],

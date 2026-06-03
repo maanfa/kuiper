@@ -62,6 +62,10 @@ kuiper/
 - 打包模式：读取可执行程序同目录下的 `app.config.yml`
 - 文件不存在时使用默认配置
 
+## 工具文档
+
+- [地形切片转换器](docs/wiki/terrain_tile_converter.md) —— 打包/解包 Cesium Quantized TerrainMesh 切片
+
 ## 许可证
 
 MIT
