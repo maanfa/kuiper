@@ -3,54 +3,21 @@
     <div class="form-fields">
       <NForm label-placement="top" size="medium">
         <NFormItem label="源文件" required>
-          <div class="path-row">
-            <NInput
-              :value="sourceFile"
-              placeholder="选择 .cztr 文件"
-              readonly
-            />
-            <NTooltip trigger="hover">
-              <template #trigger>
-                <NButton :disabled="disabled || !sourceFile" quaternary circle @click="openDirParent(sourceFile)">
-                  <template #icon><NIcon :component="OpenOutline" /></template>
-                </NButton>
-              </template>
-              打开所在目录
-            </NTooltip>
-            <NTooltip trigger="hover">
-              <template #trigger>
-                <NButton :disabled="disabled" quaternary circle @click="selectFile">
-                  <template #icon><NIcon :component="DocumentOutline" /></template>
-                </NButton>
-              </template>
-              选择文件
-            </NTooltip>
-          </div>
+          <PathInput
+            v-model="sourceFile"
+            placeholder="选择 .cztr 文件"
+            open-mode="parent"
+            select-mode="file"
+            :select-filters="cztrFilter"
+            @update:model-value="handleSourceFileChange"
+          />
         </NFormItem>
         <NFormItem label="输出目录" required>
-          <div class="path-row">
-            <NInput
-              :value="outputDir"
-              placeholder="选择瓦片还原的目标目录"
-              readonly
-            />
-            <NTooltip trigger="hover">
-              <template #trigger>
-                <NButton :disabled="disabled || !outputDir" quaternary circle @click="openDir(outputDir)">
-                  <template #icon><NIcon :component="OpenOutline" /></template>
-                </NButton>
-              </template>
-              打开此目录
-            </NTooltip>
-            <NTooltip trigger="hover">
-              <template #trigger>
-                <NButton :disabled="disabled" quaternary circle @click="selectDir">
-                  <template #icon><NIcon :component="FolderOpenOutline" /></template>
-                </NButton>
-              </template>
-              选择目录
-            </NTooltip>
-          </div>
+          <PathInput
+            v-model="outputDir"
+            placeholder="选择瓦片还原的目标目录"
+            select-mode="dir"
+          />
         </NFormItem>
         <NFormItem>
           <NCheckbox v-model:checked="clearOutput" :disabled="disabled">
@@ -105,15 +72,14 @@ import { useStorage } from '@vueuse/core'
 import {
   NForm,
   NFormItem,
-  NInput,
   NButton,
   NIcon,
-  NTooltip,
   NCheckbox,
   NInputNumber,
   NAlert,
 } from 'naive-ui'
-import { FolderOpenOutline, DocumentOutline, OpenOutline, ChevronDownOutline } from '@vicons/ionicons5'
+import { ChevronDownOutline } from '@vicons/ionicons5'
+import PathInput from './PathInput.vue'
 
 const props = defineProps<{
   disabled?: boolean
@@ -133,28 +99,10 @@ const showAdvanced = ref(false)
 const canStart = computed(() => sourceFile.value && outputDir.value)
 const isUncPath = computed(() => sourceFile.value.startsWith('\\\\') || sourceFile.value.startsWith('//') || outputDir.value.startsWith('\\\\') || outputDir.value.startsWith('//'))
 
-async function selectFile(): Promise<void> {
-  const path = await window.electronAPI.openFile([
-    { name: 'CZTR 地形包', extensions: ['cztr'] },
-  ])
-  if (path) {
-    sourceFile.value = path
-    outputDir.value = path.replace(/\.cztr$/, '_extracted')
-  }
-}
+const cztrFilter = [{ name: 'CZTR 地形包', extensions: ['cztr'] as string[] }]
 
-async function selectDir(): Promise<void> {
-  const dir = await window.electronAPI.openDirectory()
-  if (dir) outputDir.value = dir
-}
-
-function openDir(dir: string): void {
-  if (dir) window.electronAPI.openPath(dir)
-}
-
-function openDirParent(filePath: string): void {
-  const parent = filePath.replace(/[/\\][^/\\]*$/, '')
-  if (parent) window.electronAPI.openPath(parent)
+function handleSourceFileChange(path: string) {
+  outputDir.value = path.replace(/\.cztr$/, '_extracted')
 }
 
 async function startUnpack(): Promise<void> {
@@ -187,17 +135,6 @@ async function startUnpack(): Promise<void> {
   justify-content: flex-end;
   padding-top: 16px;
   flex-shrink: 0;
-}
-
-.path-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-}
-
-.path-row :deep(.n-input) {
-  flex: 1;
 }
 
 .advanced-toggle {

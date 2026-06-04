@@ -79,6 +79,7 @@ function createWindow(cfg: AppConfig): void {
     height: bounds.height,
     minWidth: 1280,
     minHeight: 720,
+    frame: false,
     title,
     icon: getIconPath(),
     webPreferences: {
@@ -87,6 +88,10 @@ function createWindow(cfg: AppConfig): void {
       nodeIntegration: false,
     },
   })
+
+  // 监听最大化/还原事件，推送给渲染进程
+  win.on('maximize', () => { win?.webContents.send('window:maximize-changed', true) })
+  win.on('unmaximize', () => { win?.webContents.send('window:maximize-changed', false) })
 
   // 移除默认菜单栏
   Menu.setApplicationMenu(null)
@@ -314,6 +319,20 @@ function registerIpcHandlers(): void {
   ipcMain.handle(IPC.SHELL_OPEN_PATH, (_event, targetPath: string) => {
     shell.openPath(targetPath)
   })
+
+  // 窗口控制
+  ipcMain.handle(IPC.WINDOW_MINIMIZE, () => win?.minimize())
+  ipcMain.handle(IPC.WINDOW_MAXIMIZE, () => {
+    if (win?.isMaximized()) {
+      win.unmaximize()
+    } else {
+      win?.maximize()
+    }
+  })
+  ipcMain.handle(IPC.WINDOW_CLOSE, () => win?.close())
+  ipcMain.handle(IPC.WINDOW_IS_MAXIMIZED, () => win?.isMaximized() ?? false)
+
+  ipcMain.handle('app:isPackaged', () => app.isPackaged)
 }
 
 // 关闭 Electron 沙盒模式

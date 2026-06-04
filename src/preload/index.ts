@@ -39,6 +39,17 @@ try {
     saveText: (content: string, defaultName: string) => ipcRenderer.invoke('dialog:saveText', content, defaultName),
     // Shell API
     openPath: (targetPath: string) => ipcRenderer.invoke('shell:openPath', targetPath),
+    // Window control API
+    minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
+    maximizeWindow: () => ipcRenderer.invoke('window:maximize'),
+    closeWindow: () => ipcRenderer.invoke('window:close'),
+    isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
+    onMaximizeChanged: (cb: (maximized: boolean) => void) => {
+      const handler = (_event: unknown, maximized: boolean) => cb(maximized)
+      ipcRenderer.on('window:maximize-changed', handler)
+      return () => { ipcRenderer.removeListener('window:maximize-changed', handler) }
+    },
+    isPackaged: () => ipcRenderer.invoke('app:isPackaged'),
   })
 } catch (err) {
   console.error('preload 暴露 API 失败:', err)

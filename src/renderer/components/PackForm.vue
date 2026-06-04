@@ -3,54 +3,21 @@
     <div class="form-fields">
       <NForm label-placement="top" size="medium">
         <NFormItem label="输入目录" required>
-          <div class="path-row">
-            <NInput
-              :value="sourceDir"
-              placeholder="选择包含 layer.json 的地形切片目录"
-              readonly
-            />
-            <NTooltip trigger="hover">
-              <template #trigger>
-                <NButton :disabled="disabled || !sourceDir" quaternary circle @click="openDir(sourceDir)">
-                  <template #icon><NIcon :component="OpenOutline" /></template>
-                </NButton>
-              </template>
-              打开此目录
-            </NTooltip>
-            <NTooltip trigger="hover">
-              <template #trigger>
-                <NButton :disabled="disabled" quaternary circle @click="selectDir">
-                  <template #icon><NIcon :component="FolderOpenOutline" /></template>
-                </NButton>
-              </template>
-              选择目录
-            </NTooltip>
-          </div>
+          <PathInput
+            v-model="sourceDir"
+            placeholder="选择包含 layer.json 的地形切片目录"
+            select-mode="dir"
+            @update:model-value="handleSourceDirChange"
+          />
         </NFormItem>
         <NFormItem label="输出文件" required>
-          <div class="path-row">
-            <NInput
-              :value="outputFile"
-              placeholder="选择 .cztr 文件保存位置"
-              readonly
-            />
-            <NTooltip trigger="hover">
-              <template #trigger>
-                <NButton :disabled="disabled || !outputFile" quaternary circle @click="openDirParent(outputFile)">
-                  <template #icon><NIcon :component="OpenOutline" /></template>
-                </NButton>
-              </template>
-              打开所在目录
-            </NTooltip>
-            <NTooltip trigger="hover">
-              <template #trigger>
-                <NButton :disabled="disabled" quaternary circle @click="selectSave">
-                  <template #icon><NIcon :component="SaveOutline" /></template>
-                </NButton>
-              </template>
-              选择保存位置
-            </NTooltip>
-          </div>
+          <PathInput
+            v-model="outputFile"
+            placeholder="选择 .cztr 文件保存位置"
+            open-mode="parent"
+            select-mode="save"
+            :save-default-name="saveDefaultName"
+          />
         </NFormItem>
         <NAlert
           v-if="isUncPath"
@@ -100,14 +67,13 @@ import { useStorage } from '@vueuse/core'
 import {
   NForm,
   NFormItem,
-  NInput,
   NButton,
   NIcon,
-  NTooltip,
   NInputNumber,
   NAlert,
 } from 'naive-ui'
-import { FolderOpenOutline, SaveOutline, OpenOutline, ChevronDownOutline } from '@vicons/ionicons5'
+import { ChevronDownOutline } from '@vicons/ionicons5'
+import PathInput from './PathInput.vue'
 
 const props = defineProps<{
   disabled?: boolean
@@ -126,31 +92,16 @@ const showAdvanced = ref(false)
 const canStart = computed(() => sourceDir.value && outputFile.value)
 const isUncPath = computed(() => sourceDir.value.startsWith('\\\\') || sourceDir.value.startsWith('//') || outputFile.value.startsWith('\\\\') || outputFile.value.startsWith('//'))
 
-async function selectDir(): Promise<void> {
-  const dir = await window.electronAPI.openDirectory()
-  if (dir) {
-    sourceDir.value = dir
-    const name = dir.split(/[/\\]/).pop() || 'tiles'
-    const parent = dir.replace(/[/\\][^/\\]*$/, '')
-    outputFile.value = parent ? `${parent}\\${name}.cztr` : `${name}.cztr`
-  }
-}
-
-async function selectSave(): Promise<void> {
-  const defaultName = sourceDir.value
+const saveDefaultName = computed(() => {
+  return sourceDir.value
     ? `${sourceDir.value.split(/[/\\]/).pop() || 'tiles'}.cztr`
     : 'tiles.cztr'
-  const path = await window.electronAPI.saveFile(defaultName)
-  if (path) outputFile.value = path
-}
+})
 
-function openDir(dir: string): void {
-  if (dir) window.electronAPI.openPath(dir)
-}
-
-function openDirParent(filePath: string): void {
-  const parent = filePath.replace(/[/\\][^/\\]*$/, '')
-  if (parent) window.electronAPI.openPath(parent)
+function handleSourceDirChange(dir: string) {
+  const name = dir.split(/[/\\]/).pop() || 'tiles'
+  const parent = dir.replace(/[/\\][^/\\]*$/, '')
+  outputFile.value = parent ? `${parent}\\${name}.cztr` : `${name}.cztr`
 }
 
 async function startPack(): Promise<void> {
@@ -182,17 +133,6 @@ async function startPack(): Promise<void> {
   justify-content: flex-end;
   padding-top: 16px;
   flex-shrink: 0;
-}
-
-.path-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-}
-
-.path-row :deep(.n-input) {
-  flex: 1;
 }
 
 .advanced-toggle {

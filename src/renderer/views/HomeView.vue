@@ -1,5 +1,6 @@
 <template>
   <div class="home-layout">
+    <TitleBar />
     <div class="home-body">
       <template v-if="sidebarStore.initialized">
         <Sidebar
@@ -22,10 +23,7 @@
         />
       </main>
     </div>
-    <StatusBar
-      :active="uiStore.showSettings"
-      @toggle-settings="uiStore.toggleSettings()"
-    />
+    <StatusBar />
   </div>
 </template>
 
@@ -36,6 +34,7 @@ import { useSidebarStore } from '../stores/sidebar'
 import { useUiStore } from '../stores/ui'
 import Sidebar from '../components/Sidebar.vue'
 import ToggleButton from '../components/ToggleButton.vue'
+import TitleBar from '../components/TitleBar.vue'
 import StatusBar from '../components/StatusBar.vue'
 import SettingsPanel from '../components/SettingsPanel.vue'
 import ClosePromptDialog from '../components/ClosePromptDialog.vue'

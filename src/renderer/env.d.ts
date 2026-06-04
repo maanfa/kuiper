@@ -126,6 +126,13 @@ interface ElectronAPI {
   saveText: (content: string, defaultName: string) => Promise<boolean>
   // Shell API
   openPath: (targetPath: string) => Promise<void>
+  // Window control API
+  minimizeWindow: () => Promise<void>
+  maximizeWindow: () => Promise<void>
+  closeWindow: () => Promise<void>
+  isMaximized: () => Promise<boolean>
+  onMaximizeChanged: (cb: (maximized: boolean) => void) => () => void
+  isPackaged: () => Promise<boolean>
 }
 
 interface Window {

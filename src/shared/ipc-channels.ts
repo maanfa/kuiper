@@ -16,4 +16,10 @@ export const IPC = {
 
   // Shell
   SHELL_OPEN_PATH: 'shell:openPath',
+
+  // Window control
+  WINDOW_MINIMIZE: 'window:minimize',
+  WINDOW_MAXIMIZE: 'window:maximize',
+  WINDOW_CLOSE: 'window:close',
+  WINDOW_IS_MAXIMIZED: 'window:isMaximized',
 } as const
