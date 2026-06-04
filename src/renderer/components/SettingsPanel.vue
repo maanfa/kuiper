@@ -189,7 +189,7 @@ onMounted(() => {
 
 .config-path {
   font-size: 12px;
-  font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  font-family: 'Maple Mono', monospace;
   color: #555;
   background: #f8f8f8;
   padding: 8px 10px;

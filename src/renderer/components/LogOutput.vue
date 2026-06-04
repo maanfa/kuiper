@@ -141,7 +141,7 @@ defineExpose({ addLog, clear })
 
 .log-lines {
   padding: 8px 12px;
-  font-family: 'Cascadia Code', Consolas, 'Courier New', monospace;
+  font-family: 'Maple Mono', monospace;
   font-size: 13px;
   line-height: 1.6;
   min-height: 100%;

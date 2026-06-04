@@ -1,11 +1,16 @@
 <template>
-  <NConfigProvider :locale="zhCN" :theme="null">
+  <NConfigProvider :locale="zhCN" :theme-overrides="themeOverrides">
     <RouterView />
   </NConfigProvider>
 </template>
 
 <script setup lang="ts">
-import { NConfigProvider } from 'naive-ui'
+import { NConfigProvider, zhCN } from 'naive-ui'
 import { RouterView } from 'vue-router'
-import { zhCN } from 'naive-ui'
+
+const themeOverrides = {
+  common: {
+    fontFamily: "'Noto Sans SC', sans-serif",
+  },
+}
 </script>
