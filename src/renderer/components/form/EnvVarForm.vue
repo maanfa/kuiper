@@ -1,3 +1,38 @@
+<script setup lang="ts">
+import { NButton, NIcon, NInput } from 'naive-ui'
+import { AddOutline, TrashOutline } from '@vicons/ionicons5'
+
+interface EnvEntry {
+  _id: number
+  key: string
+  value: string
+}
+
+const props = defineProps<{
+  modelValue: EnvEntry[]
+}>()
+
+const emit = defineEmits<{
+  'update:modelValue': [value: EnvEntry[]]
+}>()
+
+let nextId = 0
+
+function addEntry(): void {
+  emit('update:modelValue', [
+    ...props.modelValue,
+    { _id: nextId++, key: '', value: '' },
+  ])
+}
+
+function removeEntry(index: number): void {
+  emit(
+    'update:modelValue',
+    props.modelValue.filter((_, i) => i !== index),
+  )
+}
+</script>
+
 <template>
   <div class="env-var-form">
     <div
@@ -41,41 +76,6 @@
     </NButton>
   </div>
 </template>
-
-<script setup lang="ts">
-import { NButton, NIcon, NInput } from 'naive-ui'
-import { AddOutline, TrashOutline } from '@vicons/ionicons5'
-
-interface EnvEntry {
-  _id: number
-  key: string
-  value: string
-}
-
-const props = defineProps<{
-  modelValue: EnvEntry[]
-}>()
-
-const emit = defineEmits<{
-  'update:modelValue': [value: EnvEntry[]]
-}>()
-
-let nextId = 0
-
-function addEntry(): void {
-  emit('update:modelValue', [
-    ...props.modelValue,
-    { _id: nextId++, key: '', value: '' },
-  ])
-}
-
-function removeEntry(index: number): void {
-  emit(
-    'update:modelValue',
-    props.modelValue.filter((_, i) => i !== index),
-  )
-}
-</script>
 
 <style scoped>
 .env-var-form {

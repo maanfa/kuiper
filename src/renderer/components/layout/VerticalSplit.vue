@@ -1,18 +1,3 @@
-<template>
-  <div ref="containerRef" class="vertical-split">
-    <div class="split-left" :style="{ width: leftRatio * 100 + '%' }">
-      <slot name="left" />
-    </div>
-    <div
-      class="split-divider"
-      @mousedown="onDividerDragStart"
-    />
-    <div class="split-right">
-      <slot name="right" />
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref } from 'vue'
 
@@ -61,6 +46,21 @@ function onDividerDragStart(e: MouseEvent) {
   document.addEventListener('mouseup', onUp)
 }
 </script>
+
+<template>
+  <div ref="containerRef" class="vertical-split">
+    <div class="split-left" :style="{ width: leftRatio * 100 + '%' }">
+      <slot name="left" />
+    </div>
+    <div
+      class="split-divider"
+      @mousedown="onDividerDragStart"
+    />
+    <div class="split-right">
+      <slot name="right" />
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .vertical-split {

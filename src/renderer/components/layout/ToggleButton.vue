@@ -1,16 +1,3 @@
-<template>
-  <div
-    class="toggle-btn"
-    :style="{ left: collapsed ? '64px' : '240px' }"
-    @click="$emit('toggle')"
-  >
-    <NIcon size="12">
-      <ChevronBackOutline v-if="!collapsed" />
-      <ChevronForwardOutline v-else />
-    </NIcon>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { NIcon } from 'naive-ui'
 import { ChevronBackOutline, ChevronForwardOutline } from '@vicons/ionicons5'
@@ -23,6 +10,19 @@ defineEmits<{
   toggle: []
 }>()
 </script>
+
+<template>
+  <div
+    class="toggle-btn"
+    :style="{ left: collapsed ? '64px' : '240px' }"
+    @click="$emit('toggle')"
+  >
+    <NIcon size="12">
+      <ChevronBackOutline v-if="!collapsed" />
+      <ChevronForwardOutline v-else />
+    </NIcon>
+  </div>
+</template>
 
 <style scoped>
 .toggle-btn {

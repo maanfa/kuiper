@@ -1,43 +1,14 @@
-<template>
-  <div class="home-layout">
-    <TitleBar />
-    <div class="home-body">
-      <template v-if="sidebarStore.initialized">
-        <Sidebar
-          :active-route="currentRoute"
-          @navigate="handleNavigate"
-        />
-        <ToggleButton
-          :collapsed="sidebarStore.collapsed"
-          @toggle="sidebarStore.toggleCollapsed()"
-        />
-      </template>
-      <main class="main-content">
-        <RouterView />
-        <SettingsPanel v-if="uiStore.showSettings" />
-        <ClosePromptDialog
-          v-if="showClosePrompt"
-          :show="showClosePrompt"
-          @confirm="handleCloseConfirm"
-          @close="showClosePrompt = false"
-        />
-      </main>
-    </div>
-    <StatusBar />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useSidebarStore } from '../stores/sidebar'
 import { useUiStore } from '../stores/ui'
-import Sidebar from '../components/Sidebar.vue'
-import ToggleButton from '../components/ToggleButton.vue'
-import TitleBar from '../components/TitleBar.vue'
-import StatusBar from '../components/StatusBar.vue'
-import SettingsPanel from '../components/SettingsPanel.vue'
-import ClosePromptDialog from '../components/ClosePromptDialog.vue'
+import Sidebar from '../components/layout/Sidebar.vue'
+import ToggleButton from '../components/layout/ToggleButton.vue'
+import TitleBar from '../components/layout/TitleBar.vue'
+import StatusBar from '../components/layout/StatusBar.vue'
+import SettingsPanel from '../components/settings/SettingsPanel.vue'
+import ClosePromptDialog from '../components/dialog/ClosePromptDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -106,6 +77,35 @@ function handleCloseConfirm(result: CloseResult): void {
   window.electronAPI?.sendCloseResult(result)
 }
 </script>
+
+<template>
+  <div class="home-layout">
+    <TitleBar />
+    <div class="home-body">
+      <template v-if="sidebarStore.initialized">
+        <Sidebar
+          :active-route="currentRoute"
+          @navigate="handleNavigate"
+        />
+        <ToggleButton
+          :collapsed="sidebarStore.collapsed"
+          @toggle="sidebarStore.toggleCollapsed()"
+        />
+      </template>
+      <main class="main-content">
+        <RouterView />
+        <SettingsPanel v-if="uiStore.showSettings" />
+        <ClosePromptDialog
+          v-if="showClosePrompt"
+          :show="showClosePrompt"
+          @confirm="handleCloseConfirm"
+          @close="showClosePrompt = false"
+        />
+      </main>
+    </div>
+    <StatusBar />
+  </div>
+</template>
 
 <style scoped>
 .home-layout {

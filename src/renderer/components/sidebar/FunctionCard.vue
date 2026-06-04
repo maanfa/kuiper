@@ -1,3 +1,20 @@
+<script setup lang="ts">
+import { NIcon, NPopover } from 'naive-ui'
+import { InformationCircleOutline } from '@vicons/ionicons5'
+import type { Component } from 'vue'
+
+defineProps<{
+  icon: Component
+  title: string
+  description: string
+  active: boolean
+}>()
+
+defineEmits<{
+  click: []
+}>()
+</script>
+
 <template>
   <div
     class="function-card"
@@ -16,23 +33,6 @@
     </NPopover>
   </div>
 </template>
-
-<script setup lang="ts">
-import { NIcon, NPopover } from 'naive-ui'
-import { InformationCircleOutline } from '@vicons/ionicons5'
-import type { Component } from 'vue'
-
-defineProps<{
-  icon: Component
-  title: string
-  description: string
-  active: boolean
-}>()
-
-defineEmits<{
-  click: []
-}>()
-</script>
 
 <style scoped>
 .function-card {

@@ -1,3 +1,57 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useStorage } from '@vueuse/core'
+import {
+  NForm,
+  NFormItem,
+  NButton,
+  NIcon,
+  NInputNumber,
+  NAlert,
+} from 'naive-ui'
+import { ChevronDownOutline } from '@vicons/ionicons5'
+import PathInput from '../form/PathInput.vue'
+
+const props = defineProps<{
+  disabled?: boolean
+  running?: boolean
+}>()
+
+const emit = defineEmits<{
+  packStart: [params: PackParams & { workerCount: number, batchSize: number }]
+}>()
+
+const sourceDir = useStorage('pack-sourceDir', '')
+const outputFile = useStorage('pack-outputFile', '')
+const batchSize = useStorage('pack-batchSize', 400)
+const showAdvanced = ref(false)
+
+const canStart = computed(() => sourceDir.value && outputFile.value)
+const isUncPath = computed(() => sourceDir.value.startsWith('\\\\') || sourceDir.value.startsWith('//') || outputFile.value.startsWith('\\\\') || outputFile.value.startsWith('//'))
+
+const saveDefaultName = computed(() => {
+  return sourceDir.value
+    ? `${sourceDir.value.split(/[/\\]/).pop() || 'tiles'}.cztr`
+    : 'tiles.cztr'
+})
+
+function handleSourceDirChange(dir: string) {
+  const name = dir.split(/[/\\]/).pop() || 'tiles'
+  const parent = dir.replace(/[/\\][^/\\]*$/, '')
+  outputFile.value = parent ? `${parent}\\${name}.cztr` : `${name}.cztr`
+}
+
+async function startPack(): Promise<void> {
+  const cfg = await window.electronAPI.getConfig()
+  emit('packStart', {
+    sourceDir: sourceDir.value,
+    outputFile: outputFile.value,
+    workerCount: cfg.task.workerCount,
+    batchSize: batchSize.value,
+  })
+}
+</script>
+
 <template>
   <div class="pack-form">
     <div class="form-fields">
@@ -60,60 +114,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useStorage } from '@vueuse/core'
-import {
-  NForm,
-  NFormItem,
-  NButton,
-  NIcon,
-  NInputNumber,
-  NAlert,
-} from 'naive-ui'
-import { ChevronDownOutline } from '@vicons/ionicons5'
-import PathInput from './PathInput.vue'
-
-const props = defineProps<{
-  disabled?: boolean
-  running?: boolean
-}>()
-
-const emit = defineEmits<{
-  packStart: [params: PackParams & { workerCount: number, batchSize: number }]
-}>()
-
-const sourceDir = useStorage('pack-sourceDir', '')
-const outputFile = useStorage('pack-outputFile', '')
-const batchSize = useStorage('pack-batchSize', 400)
-const showAdvanced = ref(false)
-
-const canStart = computed(() => sourceDir.value && outputFile.value)
-const isUncPath = computed(() => sourceDir.value.startsWith('\\\\') || sourceDir.value.startsWith('//') || outputFile.value.startsWith('\\\\') || outputFile.value.startsWith('//'))
-
-const saveDefaultName = computed(() => {
-  return sourceDir.value
-    ? `${sourceDir.value.split(/[/\\]/).pop() || 'tiles'}.cztr`
-    : 'tiles.cztr'
-})
-
-function handleSourceDirChange(dir: string) {
-  const name = dir.split(/[/\\]/).pop() || 'tiles'
-  const parent = dir.replace(/[/\\][^/\\]*$/, '')
-  outputFile.value = parent ? `${parent}\\${name}.cztr` : `${name}.cztr`
-}
-
-async function startPack(): Promise<void> {
-  const cfg = await window.electronAPI.getConfig()
-  emit('packStart', {
-    sourceDir: sourceDir.value,
-    outputFile: outputFile.value,
-    workerCount: cfg.task.workerCount,
-    batchSize: batchSize.value,
-  })
-}
-</script>
 
 <style scoped>
 .pack-form {

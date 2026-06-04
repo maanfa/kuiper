@@ -1,3 +1,47 @@
+<script setup lang="ts">
+import { ref, nextTick } from 'vue'
+import { NScrollbar, NButton, NIcon, NTooltip } from 'naive-ui'
+import { TrashOutline, DownloadOutline } from '@vicons/ionicons5'
+import { formatTimestamp } from '../../../shared/time-utils'
+
+interface LogLine {
+  level: string
+  message: string
+  timestamp: number
+}
+
+const lines = ref<LogLine[]>([])
+const scrollRef = ref<InstanceType<typeof NScrollbar> | null>(null)
+
+function addLog(level: string, message: string, timestamp?: number): void {
+  lines.value.push({
+    level,
+    message,
+    timestamp: timestamp ?? Date.now(),
+  })
+  nextTick(() => {
+    scrollRef.value?.scrollTo({ top: 999999, behavior: 'instant' })
+  })
+}
+
+function clear(): void {
+  lines.value = []
+}
+
+async function exportLog(): Promise<void> {
+  if (lines.value.length === 0) return
+  const text = lines.value
+    .map((l) => `[${formatTimestamp(l.timestamp)}] [${l.level.toUpperCase()}] ${l.message}`)
+    .join('\n')
+  const ok = await window.electronAPI.saveText(text, `log_${Date.now()}.txt`)
+  if (!ok) {
+    // user cancelled dialog
+  }
+}
+
+defineExpose({ addLog, clear })
+</script>
+
 <template>
   <div class="log-output">
     <div class="log-header">
@@ -51,50 +95,6 @@
     </NScrollbar>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, nextTick } from 'vue'
-import { NScrollbar, NButton, NIcon, NTooltip } from 'naive-ui'
-import { TrashOutline, DownloadOutline } from '@vicons/ionicons5'
-import { formatTimestamp } from '../../shared/time-utils'
-
-interface LogLine {
-  level: string
-  message: string
-  timestamp: number
-}
-
-const lines = ref<LogLine[]>([])
-const scrollRef = ref<InstanceType<typeof NScrollbar> | null>(null)
-
-function addLog(level: string, message: string, timestamp?: number): void {
-  lines.value.push({
-    level,
-    message,
-    timestamp: timestamp ?? Date.now(),
-  })
-  nextTick(() => {
-    scrollRef.value?.scrollTo({ top: 999999, behavior: 'instant' })
-  })
-}
-
-function clear(): void {
-  lines.value = []
-}
-
-async function exportLog(): Promise<void> {
-  if (lines.value.length === 0) return
-  const text = lines.value
-    .map((l) => `[${formatTimestamp(l.timestamp)}] [${l.level.toUpperCase()}] ${l.message}`)
-    .join('\n')
-  const ok = await window.electronAPI.saveText(text, `log_${Date.now()}.txt`)
-  if (!ok) {
-    // user cancelled dialog
-  }
-}
-
-defineExpose({ addLog, clear })
-</script>
 
 <style scoped>
 .log-output {

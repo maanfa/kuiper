@@ -1,3 +1,24 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import { NButton, NCard, NCheckbox, NModal, NSpace } from 'naive-ui'
+
+defineProps<{
+  show: boolean
+}>()
+
+const emit = defineEmits<{
+  confirm: [result: CloseResult]
+  close: []
+}>()
+
+const remember = ref(false)
+
+function onAction(action: 'exit' | 'hide'): void {
+  emit('confirm', { action, remember: remember.value })
+  remember.value = false
+}
+</script>
+
 <template>
   <NModal
     :show="show"
@@ -25,27 +46,6 @@
     </NCard>
   </NModal>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue'
-import { NButton, NCard, NCheckbox, NModal, NSpace } from 'naive-ui'
-
-defineProps<{
-  show: boolean
-}>()
-
-const emit = defineEmits<{
-  confirm: [result: CloseResult]
-  close: []
-}>()
-
-const remember = ref(false)
-
-function onAction(action: 'exit' | 'hide'): void {
-  emit('confirm', { action, remember: remember.value })
-  remember.value = false
-}
-</script>
 
 <style scoped>
 </style>

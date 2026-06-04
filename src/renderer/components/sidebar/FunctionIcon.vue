@@ -1,18 +1,3 @@
-<template>
-  <NTooltip trigger="hover" placement="right">
-    <template #trigger>
-      <div
-        class="function-icon"
-        :class="{ active }"
-        @click="$emit('click')"
-      >
-        <NIcon size="24"><Component :is="icon" /></NIcon>
-      </div>
-    </template>
-    {{ title }}
-  </NTooltip>
-</template>
-
 <script setup lang="ts">
 import { NIcon, NTooltip } from 'naive-ui'
 import type { Component } from 'vue'
@@ -27,6 +12,21 @@ defineEmits<{
   click: []
 }>()
 </script>
+
+<template>
+  <NTooltip trigger="hover" placement="right">
+    <template #trigger>
+      <div
+        class="function-icon"
+        :class="{ active }"
+        @click="$emit('click')"
+      >
+        <NIcon size="24"><Component :is="icon" /></NIcon>
+      </div>
+    </template>
+    {{ title }}
+  </NTooltip>
+</template>
 
 <style scoped>
 .function-icon {

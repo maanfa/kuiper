@@ -1,3 +1,22 @@
+<script setup lang="ts">
+import { RouterLink } from 'vue-router'
+import { NScrollbar } from 'naive-ui'
+import { useSidebarStore } from '../../stores/sidebar'
+import FunctionCard from '../sidebar/FunctionCard.vue'
+import FunctionIcon from '../sidebar/FunctionIcon.vue'
+import kuiperRingIcon from '../../assets/KuiperRing.webp'
+
+defineProps<{
+  activeRoute: string
+}>()
+
+defineEmits<{
+  navigate: [route: string]
+}>()
+
+const store = useSidebarStore()
+</script>
+
 <template>
   <aside class="sidebar" :class="{ collapsed: store.collapsed }">
     <RouterLink to="/" class="sidebar-home">
@@ -36,25 +55,6 @@
     </NScrollbar>
   </aside>
 </template>
-
-<script setup lang="ts">
-import { RouterLink } from 'vue-router'
-import { NScrollbar } from 'naive-ui'
-import { useSidebarStore } from '../stores/sidebar'
-import FunctionCard from './FunctionCard.vue'
-import FunctionIcon from './FunctionIcon.vue'
-import kuiperRingIcon from '../assets/KuiperRing.webp'
-
-defineProps<{
-  activeRoute: string
-}>()
-
-defineEmits<{
-  navigate: [route: string]
-}>()
-
-const store = useSidebarStore()
-</script>
 
 <style scoped>
 .sidebar {

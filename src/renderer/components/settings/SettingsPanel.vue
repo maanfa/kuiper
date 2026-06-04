@@ -1,3 +1,37 @@
+<script setup lang="ts">
+import { onMounted } from 'vue'
+import {
+  NButton,
+  NCard,
+  NH2,
+  NIcon,
+  NInput,
+  NRadio,
+  NRadioGroup,
+  NScrollbar,
+  NSelect,
+  NSpace,
+  NText,
+  NTooltip,
+} from 'naive-ui'
+import { RefreshOutline, SaveOutline } from '@vicons/ionicons5'
+import EnvVarForm from '../form/EnvVarForm.vue'
+import { useSettingsStore } from '../../stores/settings'
+
+const logLevelOptions = [
+  { label: 'Debug', value: 'debug' },
+  { label: 'Info', value: 'info' },
+  { label: 'Warn', value: 'warn' },
+  { label: 'Error', value: 'error' },
+]
+
+const store = useSettingsStore()
+
+onMounted(() => {
+  store.loadConfig()
+})
+</script>
+
 <template>
   <div class="settings-panel">
     <div class="panel-header">
@@ -113,40 +147,6 @@
     </NScrollbar>
   </div>
 </template>
-
-<script setup lang="ts">
-import { onMounted } from 'vue'
-import {
-  NButton,
-  NCard,
-  NH2,
-  NIcon,
-  NInput,
-  NRadio,
-  NRadioGroup,
-  NScrollbar,
-  NSelect,
-  NSpace,
-  NText,
-  NTooltip,
-} from 'naive-ui'
-import { RefreshOutline, SaveOutline } from '@vicons/ionicons5'
-import EnvVarForm from './EnvVarForm.vue'
-import { useSettingsStore } from '../stores/settings'
-
-const logLevelOptions = [
-  { label: 'Debug', value: 'debug' },
-  { label: 'Info', value: 'info' },
-  { label: 'Warn', value: 'warn' },
-  { label: 'Error', value: 'error' },
-]
-
-const store = useSettingsStore()
-
-onMounted(() => {
-  store.loadConfig()
-})
-</script>
 
 <style scoped>
 .settings-panel {

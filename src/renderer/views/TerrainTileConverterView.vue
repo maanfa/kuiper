@@ -1,91 +1,3 @@
-<template>
-  <div class="converter-view">
-    <ToolHeader>
-      <template #title>地形切片转换器</template>
-      <template #actions>
-        <div class="worker-count-row">
-          <span class="worker-label">并行数</span>
-          <NInputNumber
-            :min="1"
-            :max="50"
-            :value="workerCount"
-            :disabled="running"
-            size="small"
-            :style="{ width: '72px' }"
-            @update:value="onWorkerCountChange"
-          />
-        </div>
-        <NButton
-          v-if="running"
-          size="small"
-          type="error"
-          quaternary
-          @click="cancelTask"
-        >
-          取消
-        </NButton>
-      </template>
-    </ToolHeader>
-
-    <div v-if="running || lastProgress" class="progress-area">
-      <NProgress
-        :percentage="progressPercent"
-        :status="progressStatus === 'error' ? 'error' : progressStatus === 'success' ? 'success' : 'default'"
-        :height="4"
-        :border-radius="0"
-      />
-      <span class="progress-text">{{ progressText }}</span>
-    </div>
-
-    <VerticalSplit
-      :initial-ratio="0.45"
-      :min-left-width="300"
-      :min-right-width="600"
-      class="converter-body"
-    >
-      <template #left>
-        <div class="left-panel">
-          <NTabs type="bar" :default-value="'pack'">
-            <NTabPane name="pack" tab="切片转单文件">
-              <div class="tab-content">
-                <PackForm
-                  :disabled="running"
-                  :running="running"
-                  @pack-start="onPackStart"
-                />
-              </div>
-            </NTabPane>
-            <NTabPane name="unpack" tab="单文件解包切片">
-              <div class="tab-content">
-                <UnpackForm
-                  :disabled="running"
-                  :running="running"
-                  @unpack-start="onUnpackStart"
-                />
-              </div>
-            </NTabPane>
-          </NTabs>
-        </div>
-      </template>
-      <template #right>
-        <LogOutput ref="logRef" />
-      </template>
-    </VerticalSplit>
-
-    <ConfirmTaskModal
-      :show="showConfirm"
-      :type="pendingType"
-      :source-dir="pendingPack?.sourceDir"
-      :output-file="pendingPack?.outputFile"
-      :source-file="pendingUnpack?.sourceFile"
-      :output-dir="pendingUnpack?.outputDir"
-      :worker-count="workerCount"
-      @close="showConfirm = false"
-      @confirm="handleConfirm"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
@@ -95,12 +7,12 @@ import {
   NInputNumber,
   NProgress,
 } from 'naive-ui'
-import ToolHeader from '../components/ToolHeader.vue'
-import VerticalSplit from '../components/VerticalSplit.vue'
-import LogOutput from '../components/LogOutput.vue'
-import PackForm from '../components/PackForm.vue'
-import UnpackForm from '../components/UnpackForm.vue'
-import ConfirmTaskModal from '../components/ConfirmTaskModal.vue'
+import ToolHeader from '../components/tool/ToolHeader.vue'
+import VerticalSplit from '../components/layout/VerticalSplit.vue'
+import LogOutput from '../components/tool/LogOutput.vue'
+import PackForm from '../components/tool/PackForm.vue'
+import UnpackForm from '../components/tool/UnpackForm.vue'
+import ConfirmTaskModal from '../components/tool/ConfirmTaskModal.vue'
 
 const logRef = ref<InstanceType<typeof LogOutput> | null>(null)
 const running = ref(false)
@@ -239,6 +151,94 @@ async function cancelTask(): Promise<void> {
   }
 }
 </script>
+
+<template>
+  <div class="converter-view">
+    <ToolHeader>
+      <template #title>地形切片转换器</template>
+      <template #actions>
+        <div class="worker-count-row">
+          <span class="worker-label">并行数</span>
+          <NInputNumber
+            :min="1"
+            :max="50"
+            :value="workerCount"
+            :disabled="running"
+            size="small"
+            :style="{ width: '72px' }"
+            @update:value="onWorkerCountChange"
+          />
+        </div>
+        <NButton
+          v-if="running"
+          size="small"
+          type="error"
+          quaternary
+          @click="cancelTask"
+        >
+          取消
+        </NButton>
+      </template>
+    </ToolHeader>
+
+    <div v-if="running || lastProgress" class="progress-area">
+      <NProgress
+        :percentage="progressPercent"
+        :status="progressStatus === 'error' ? 'error' : progressStatus === 'success' ? 'success' : 'default'"
+        :height="4"
+        :border-radius="0"
+      />
+      <span class="progress-text">{{ progressText }}</span>
+    </div>
+
+    <VerticalSplit
+      :initial-ratio="0.45"
+      :min-left-width="300"
+      :min-right-width="600"
+      class="converter-body"
+    >
+      <template #left>
+        <div class="left-panel">
+          <NTabs type="bar" :default-value="'pack'">
+            <NTabPane name="pack" tab="切片转单文件">
+              <div class="tab-content">
+                <PackForm
+                  :disabled="running"
+                  :running="running"
+                  @pack-start="onPackStart"
+                />
+              </div>
+            </NTabPane>
+            <NTabPane name="unpack" tab="单文件解包切片">
+              <div class="tab-content">
+                <UnpackForm
+                  :disabled="running"
+                  :running="running"
+                  @unpack-start="onUnpackStart"
+                />
+              </div>
+            </NTabPane>
+          </NTabs>
+        </div>
+      </template>
+      <template #right>
+        <LogOutput ref="logRef" />
+      </template>
+    </VerticalSplit>
+
+    <ConfirmTaskModal
+      :show="showConfirm"
+      :type="pendingType"
+      :source-dir="pendingPack?.sourceDir"
+      :output-file="pendingPack?.outputFile"
+      :source-file="pendingUnpack?.sourceFile"
+      :output-dir="pendingUnpack?.outputDir"
+      :worker-count="workerCount"
+      @close="showConfirm = false"
+      @confirm="handleConfirm"
+    />
+  </div>
+</template>
 
 <style scoped>
 .converter-view {

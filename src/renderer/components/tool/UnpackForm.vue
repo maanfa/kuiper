@@ -1,3 +1,54 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useStorage } from '@vueuse/core'
+import {
+  NForm,
+  NFormItem,
+  NButton,
+  NIcon,
+  NCheckbox,
+  NInputNumber,
+  NAlert,
+} from 'naive-ui'
+import { ChevronDownOutline } from '@vicons/ionicons5'
+import PathInput from '../form/PathInput.vue'
+
+const props = defineProps<{
+  disabled?: boolean
+  running?: boolean
+}>()
+
+const emit = defineEmits<{
+  unpackStart: [params: UnpackParams & { workerCount: number, clearOutput: boolean, batchSize: number }]
+}>()
+
+const sourceFile = useStorage('unpack-sourceFile', '')
+const outputDir = useStorage('unpack-outputDir', '')
+const clearOutput = useStorage('unpack-clearOutput', false)
+const batchSize = useStorage('unpack-batchSize', 400)
+const showAdvanced = ref(false)
+
+const canStart = computed(() => sourceFile.value && outputDir.value)
+const isUncPath = computed(() => sourceFile.value.startsWith('\\\\') || sourceFile.value.startsWith('//') || outputDir.value.startsWith('\\\\') || outputDir.value.startsWith('//'))
+
+const cztrFilter = [{ name: 'CZTR 地形包', extensions: ['cztr'] as string[] }]
+
+function handleSourceFileChange(path: string) {
+  outputDir.value = path.replace(/\.cztr$/, '_extracted')
+}
+
+async function startUnpack(): Promise<void> {
+  const cfg = await window.electronAPI.getConfig()
+  emit('unpackStart', {
+    sourceFile: sourceFile.value,
+    outputDir: outputDir.value,
+    workerCount: cfg.task.workerCount,
+    clearOutput: clearOutput.value,
+    batchSize: batchSize.value,
+  })
+}
+</script>
+
 <template>
   <div class="unpack-form">
     <div class="form-fields">
@@ -65,57 +116,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useStorage } from '@vueuse/core'
-import {
-  NForm,
-  NFormItem,
-  NButton,
-  NIcon,
-  NCheckbox,
-  NInputNumber,
-  NAlert,
-} from 'naive-ui'
-import { ChevronDownOutline } from '@vicons/ionicons5'
-import PathInput from './PathInput.vue'
-
-const props = defineProps<{
-  disabled?: boolean
-  running?: boolean
-}>()
-
-const emit = defineEmits<{
-  unpackStart: [params: UnpackParams & { workerCount: number, clearOutput: boolean, batchSize: number }]
-}>()
-
-const sourceFile = useStorage('unpack-sourceFile', '')
-const outputDir = useStorage('unpack-outputDir', '')
-const clearOutput = useStorage('unpack-clearOutput', false)
-const batchSize = useStorage('unpack-batchSize', 400)
-const showAdvanced = ref(false)
-
-const canStart = computed(() => sourceFile.value && outputDir.value)
-const isUncPath = computed(() => sourceFile.value.startsWith('\\\\') || sourceFile.value.startsWith('//') || outputDir.value.startsWith('\\\\') || outputDir.value.startsWith('//'))
-
-const cztrFilter = [{ name: 'CZTR 地形包', extensions: ['cztr'] as string[] }]
-
-function handleSourceFileChange(path: string) {
-  outputDir.value = path.replace(/\.cztr$/, '_extracted')
-}
-
-async function startUnpack(): Promise<void> {
-  const cfg = await window.electronAPI.getConfig()
-  emit('unpackStart', {
-    sourceFile: sourceFile.value,
-    outputDir: outputDir.value,
-    workerCount: cfg.task.workerCount,
-    clearOutput: clearOutput.value,
-    batchSize: batchSize.value,
-  })
-}
-</script>
 
 <style scoped>
 .unpack-form {

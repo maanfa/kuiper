@@ -1,3 +1,12 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import ToolHeader from '../components/tool/ToolHeader.vue'
+import VerticalSplit from '../components/layout/VerticalSplit.vue'
+import LogOutput from '../components/tool/LogOutput.vue'
+
+const logRef = ref<InstanceType<typeof LogOutput> | null>(null)
+</script>
+
 <template>
   <div class="generator-view">
     <ToolHeader>
@@ -19,15 +28,6 @@
     </VerticalSplit>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue'
-import ToolHeader from '../components/ToolHeader.vue'
-import VerticalSplit from '../components/VerticalSplit.vue'
-import LogOutput from '../components/LogOutput.vue'
-
-const logRef = ref<InstanceType<typeof LogOutput> | null>(null)
-</script>
 
 <style scoped>
 .generator-view {

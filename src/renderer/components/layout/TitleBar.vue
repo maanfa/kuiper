@@ -1,3 +1,55 @@
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { NButton, NIcon, NTooltip } from 'naive-ui'
+import { SettingsOutline } from '@vicons/ionicons5'
+import { useUiStore } from '../../stores/ui'
+
+const api = window.electronAPI
+
+const uiStore = useUiStore()
+
+const isPackaged = ref(true)
+const isMaximized = ref(false)
+
+const appTitle = computed(() => isPackaged.value ? '柯伊伯方盒' : '柯伊伯方盒 - [DevMode]')
+
+let cleanupMaximize: (() => void) | null = null
+
+onMounted(async () => {
+  try {
+    isPackaged.value = await api.isPackaged()
+  } catch {
+    // fallback
+  }
+
+  try {
+    isMaximized.value = await api.isMaximized()
+  } catch {
+    // fallback
+  }
+
+  cleanupMaximize = api.onMaximizeChanged((maximized) => {
+    isMaximized.value = maximized
+  })
+})
+
+onUnmounted(() => {
+  cleanupMaximize?.()
+})
+
+function handleMinimize() {
+  api.minimizeWindow()
+}
+
+function handleMaximize() {
+  api.maximizeWindow()
+}
+
+function handleClose() {
+  api.closeWindow()
+}
+</script>
+
 <template>
   <header class="title-bar" @dblclick="handleMaximize">
     <div class="title-bar-left">
@@ -57,58 +109,6 @@
     </div>
   </header>
 </template>
-
-<script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { NButton, NIcon, NTooltip } from 'naive-ui'
-import { SettingsOutline } from '@vicons/ionicons5'
-import { useUiStore } from '../stores/ui'
-
-const api = window.electronAPI
-
-const uiStore = useUiStore()
-
-const isPackaged = ref(true)
-const isMaximized = ref(false)
-
-const appTitle = computed(() => isPackaged.value ? '柯伊伯方盒' : '柯伊伯方盒 - [DevMode]')
-
-let cleanupMaximize: (() => void) | null = null
-
-onMounted(async () => {
-  try {
-    isPackaged.value = await api.isPackaged()
-  } catch {
-    // fallback
-  }
-
-  try {
-    isMaximized.value = await api.isMaximized()
-  } catch {
-    // fallback
-  }
-
-  cleanupMaximize = api.onMaximizeChanged((maximized) => {
-    isMaximized.value = maximized
-  })
-})
-
-onUnmounted(() => {
-  cleanupMaximize?.()
-})
-
-function handleMinimize() {
-  api.minimizeWindow()
-}
-
-function handleMaximize() {
-  api.maximizeWindow()
-}
-
-function handleClose() {
-  api.closeWindow()
-}
-</script>
 
 <style scoped>
 .title-bar {

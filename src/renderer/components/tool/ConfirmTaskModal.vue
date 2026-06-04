@@ -1,3 +1,27 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { NModal, NCard, NButton } from 'naive-ui'
+
+const props = defineProps<{
+  show: boolean
+  type: 'pack' | 'unpack'
+  sourceDir?: string
+  outputFile?: string
+  sourceFile?: string
+  outputDir?: string
+  workerCount: number
+}>()
+
+defineEmits<{
+  close: []
+  confirm: []
+}>()
+
+const typeLabel = computed(() => (props.type === 'pack' ? '切片转单文件' : '单文件解包切片'))
+const inputPath = computed(() => (props.type === 'pack' ? props.sourceDir : props.sourceFile) ?? '')
+const outputPath = computed(() => (props.type === 'pack' ? props.outputFile : props.outputDir) ?? '')
+</script>
+
 <template>
   <NModal :show="show" :mask-closable="false" @update:show="$emit('close')">
     <NCard
@@ -33,30 +57,6 @@
     </NCard>
   </NModal>
 </template>
-
-<script setup lang="ts">
-import { computed } from 'vue'
-import { NModal, NCard, NButton } from 'naive-ui'
-
-const props = defineProps<{
-  show: boolean
-  type: 'pack' | 'unpack'
-  sourceDir?: string
-  outputFile?: string
-  sourceFile?: string
-  outputDir?: string
-  workerCount: number
-}>()
-
-defineEmits<{
-  close: []
-  confirm: []
-}>()
-
-const typeLabel = computed(() => (props.type === 'pack' ? '切片转单文件' : '单文件解包切片'))
-const inputPath = computed(() => (props.type === 'pack' ? props.sourceDir : props.sourceFile) ?? '')
-const outputPath = computed(() => (props.type === 'pack' ? props.outputFile : props.outputDir) ?? '')
-</script>
 
 <style scoped>
 .confirm-body {
