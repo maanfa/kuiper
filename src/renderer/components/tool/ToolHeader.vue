@@ -22,9 +22,13 @@
 }
 
 .tool-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: 16px;
   font-weight: 600;
   color: #333;
+  min-width: 0;
 }
 
 .tool-header-right {

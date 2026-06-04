@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { markRaw, ref } from 'vue'
-import { GlobeOutline, SwapHorizontalOutline } from '@vicons/ionicons5'
+import { GlobeOutline, SwapHorizontalOutline, EyeOutline } from '@vicons/ionicons5'
 import type { Component } from 'vue'
 
 /** 功能项数据结构 */
@@ -29,6 +29,14 @@ const DEFAULT_ITEMS: FunctionItem[] = [
       'Cesium Quantized TerrainMesh 切片打包与解包工具，支持将瓦片目录打包为单个 SQLite 文件，或从 SQLite 文件还原瓦片目录。',
     route: '/terrain-tile-converter',
     icon: markRaw(SwapHorizontalOutline),
+  },
+  {
+    id: 'inspector',
+    title: '文件查看器',
+    description:
+      '打开并浏览 .cztr 地形包文件，查看内部瓦片索引与元数据信息。',
+    route: '/inspector',
+    icon: markRaw(EyeOutline),
   },
 ]
 

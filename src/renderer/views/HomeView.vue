@@ -98,7 +98,11 @@ function handleCloseConfirm(result: CloseResult): void {
         />
       </template>
       <main class="main-content">
-        <RouterView />
+        <RouterView v-slot="{ Component }">
+          <keep-alive>
+            <component :is="Component" />
+          </keep-alive>
+        </RouterView>
         <SettingsPanel v-if="uiStore.showSettings" />
         <ClosePromptDialog
           v-if="showClosePrompt"
@@ -108,7 +112,7 @@ function handleCloseConfirm(result: CloseResult): void {
         />
       </main>
     </div>
-    <StatusBar :status-text="uiStore.statusText" />
+    <StatusBar :status-text="uiStore.statusText" :flash-text="uiStore.flashText" />
   </div>
 </template>
 

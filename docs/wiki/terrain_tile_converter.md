@@ -19,10 +19,7 @@ Cesium Quantized TerrainMesh 格式的切片打包与解包工具。支持将瓦
 
 ### 文件格式
 
-`.cztr` 为 SQLite 数据库容器，内含两张表：
-
-- `tiles(z, x, y, data BLOB)`：瓦片二进制数据，按 TMS 坐标索引
-- `metadata(key, value)`：元数据包括 `layer.json` 全文、瓦片范围、缩放级别、瓦片数量、创建时间等
+`.cztr` 为 SQLite 数据库容器，详见 [CZTR 文件格式](./cztr_format.md)。
 
 ## 解包（单文件 → 切片）
 

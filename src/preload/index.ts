@@ -50,6 +50,17 @@ try {
       return () => { ipcRenderer.removeListener('window:maximize-changed', handler) }
     },
     isPackaged: () => ipcRenderer.invoke('app:isPackaged'),
+    // CZTR Inspector API
+    cztrOpen: (filePath: string) => ipcRenderer.invoke('cztr:open', filePath),
+    cztrQuery: (filePath: string, tableName: string, search?: string) =>
+      ipcRenderer.invoke('cztr:query', filePath, tableName, search),
+    cztrQueryRow: (filePath: string, tableName: string, whereCol: string, whereVal: unknown) =>
+      ipcRenderer.invoke('cztr:query-row', filePath, tableName, whereCol, whereVal),
+    cztrQueryTile: (filePath: string, z: number, x: number, y: number) =>
+      ipcRenderer.invoke('cztr:query-tile', filePath, z, x, y),
+    cztrSaveTile: (filePath: string, z: number, x: number, y: number, destPath: string) =>
+      ipcRenderer.invoke('cztr:save-tile', filePath, z, x, y, destPath),
+    cztrSummary: (filePath: string) => ipcRenderer.invoke('cztr:summary', filePath),
   })
 } catch (err) {
   console.error('preload 暴露 API 失败:', err)

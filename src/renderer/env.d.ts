@@ -105,6 +105,33 @@ interface TaskStartConfig {
   clearOutput?: boolean
 }
 
+/** CZTR 打开结果 */
+interface CztrOpenResult {
+  valid: boolean
+  error?: string
+  tables: string[]
+  tileCount: number
+}
+
+/** CZTR 查询结果 */
+interface CztrQueryResult {
+  columns: { title: string, key: string, width?: number }[]
+  rows: Record<string, unknown>[]
+  error?: string
+}
+
+/** CZTR 文件概要 */
+interface CztrSummary {
+  fileSize: number
+  tileCount: number
+  minZoom: number | null
+  maxZoom: number | null
+  minX: number | null
+  maxX: number | null
+  minY: number | null
+  maxY: number | null
+}
+
 /** 暴露到渲染进程的 Electron API */
 interface ElectronAPI {
   getConfig: () => Promise<AppConfig>
@@ -133,6 +160,13 @@ interface ElectronAPI {
   isMaximized: () => Promise<boolean>
   onMaximizeChanged: (cb: (maximized: boolean) => void) => () => void
   isPackaged: () => Promise<boolean>
+  // CZTR Inspector API
+  cztrOpen: (filePath: string) => Promise<CztrOpenResult>
+  cztrQuery: (filePath: string, tableName: string, search?: string) => Promise<CztrQueryResult>
+  cztrQueryRow: (filePath: string, tableName: string, whereCol: string, whereVal: unknown) => Promise<Record<string, unknown> | null>
+  cztrQueryTile: (filePath: string, z: number, x: number, y: number) => Promise<{ z: number, x: number, y: number, dataSize: number } | null>
+  cztrSaveTile: (filePath: string, z: number, x: number, y: number, destPath: string) => Promise<boolean>
+  cztrSummary: (filePath: string) => Promise<CztrSummary | null>
 }
 
 interface Window {

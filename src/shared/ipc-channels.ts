@@ -22,4 +22,12 @@ export const IPC = {
   WINDOW_MAXIMIZE: 'window:maximize',
   WINDOW_CLOSE: 'window:close',
   WINDOW_IS_MAXIMIZED: 'window:isMaximized',
+
+  // CZTR Inspector
+  CZTR_OPEN: 'cztr:open',
+  CZTR_QUERY: 'cztr:query',
+  CZTR_QUERY_ROW: 'cztr:query-row',
+  CZTR_QUERY_TILE: 'cztr:query-tile',
+  CZTR_SAVE_TILE: 'cztr:save-tile',
+  CZTR_SUMMARY: 'cztr:summary',
 } as const

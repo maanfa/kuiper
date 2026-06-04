@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NConfigProvider, zhCN } from 'naive-ui'
+import { NConfigProvider, NMessageProvider, NDialogProvider, zhCN } from 'naive-ui'
 import { RouterView } from 'vue-router'
 
 const themeOverrides = {
@@ -11,6 +11,10 @@ const themeOverrides = {
 
 <template>
   <NConfigProvider :locale="zhCN" :theme-overrides="themeOverrides">
-    <RouterView />
+    <NMessageProvider>
+      <NDialogProvider>
+        <RouterView />
+      </NDialogProvider>
+    </NMessageProvider>
   </NConfigProvider>
 </template>

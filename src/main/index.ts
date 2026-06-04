@@ -12,6 +12,7 @@ import type { AppConfig, CloseBehavior } from './config'
 import { Logger } from './logger'
 import { TaskManager } from './task/TaskManager'
 import { IPC } from '../shared/ipc-channels'
+import { openCztr, queryCztr, queryCztrRow, queryCztrTile, saveCztrTile, getCztrSummary } from './cztr-inspector'
 
 // 修复 Windows 控制台编码，确保中文日志正常显示
 if (process.platform === 'win32') {
@@ -331,6 +332,35 @@ function registerIpcHandlers(): void {
   })
   ipcMain.handle(IPC.WINDOW_CLOSE, () => win?.close())
   ipcMain.handle(IPC.WINDOW_IS_MAXIMIZED, () => win?.isMaximized() ?? false)
+
+  // CZTR Inspector
+  ipcMain.handle(IPC.CZTR_OPEN, (_event, filePath: string) => {
+    return openCztr(filePath)
+  })
+
+  ipcMain.handle(IPC.CZTR_QUERY, (_event, filePath: string, tableName: string, search?: string) => {
+    try {
+      return queryCztr(filePath, tableName, search)
+    } catch (err) {
+      return { columns: [], rows: [], error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle(IPC.CZTR_QUERY_ROW, (_event, filePath: string, tableName: string, whereCol: string, whereVal: unknown) => {
+    return queryCztrRow(filePath, tableName, whereCol, whereVal)
+  })
+
+  ipcMain.handle(IPC.CZTR_QUERY_TILE, (_event, filePath: string, z: number, x: number, y: number) => {
+    return queryCztrTile(filePath, z, x, y)
+  })
+
+  ipcMain.handle(IPC.CZTR_SAVE_TILE, (_event, filePath: string, z: number, x: number, y: number, destPath: string) => {
+    return saveCztrTile(filePath, z, x, y, destPath)
+  })
+
+  ipcMain.handle(IPC.CZTR_SUMMARY, (_event, filePath: string) => {
+    return getCztrSummary(filePath)
+  })
 
   ipcMain.handle('app:isPackaged', () => app.isPackaged)
 }
