@@ -3,7 +3,11 @@
     <NInput
       :value="modelValue"
       :placeholder="placeholder"
-      readonly
+      :clearable="!disabled"
+      :input-props="{ title: modelValue || undefined }"
+      @update:value="handleInput"
+      @focus="handleFocus"
+      @blur="handleBlur"
     />
     <NTooltip trigger="hover">
       <template #trigger>
@@ -32,6 +36,9 @@
 import { computed } from 'vue'
 import { NInput, NButton, NIcon, NTooltip } from 'naive-ui'
 import { FolderOpenOutline, DocumentOutline, SaveOutline, OpenOutline } from '@vicons/ionicons5'
+import { useUiStore } from '../stores/ui'
+
+const uiStore = useUiStore()
 
 const props = withDefaults(
   defineProps<{
@@ -82,6 +89,18 @@ function handleOpen() {
   } else {
     window.electronAPI.openPath(props.modelValue)
   }
+}
+
+function handleInput(value: string) {
+  emit('update:modelValue', value)
+}
+
+function handleFocus() {
+  uiStore.setStatusText(props.modelValue)
+}
+
+function handleBlur() {
+  uiStore.clearStatusText()
 }
 
 async function handleSelect() {

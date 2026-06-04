@@ -97,6 +97,7 @@ function handleNavigate(path: string): void {
 router.afterEach((to) => {
   currentRoute.value = to.path
   uiStore.closeSettings()
+  uiStore.clearStatusText()
 })
 
 /** 处理关闭询问弹窗的选择 */

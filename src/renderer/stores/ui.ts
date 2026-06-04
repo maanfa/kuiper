@@ -5,6 +5,8 @@ import { ref } from 'vue'
 export const useUiStore = defineStore('ui', () => {
   /** 设置面板可见性 */
   const showSettings = ref(false)
+  /** 状态栏路径文本 */
+  const statusText = ref('')
 
   function toggleSettings(): void {
     showSettings.value = !showSettings.value
@@ -14,5 +16,13 @@ export const useUiStore = defineStore('ui', () => {
     showSettings.value = false
   }
 
-  return { showSettings, toggleSettings, closeSettings }
+  function setStatusText(text: string): void {
+    statusText.value = text
+  }
+
+  function clearStatusText(): void {
+    statusText.value = ''
+  }
+
+  return { showSettings, statusText, toggleSettings, closeSettings, setStatusText, clearStatusText }
 })
