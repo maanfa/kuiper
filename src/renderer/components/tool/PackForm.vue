@@ -11,6 +11,9 @@ import {
 } from 'naive-ui'
 import { ChevronDownOutline } from '@vicons/ionicons5'
 import PathInput from '../form/PathInput.vue'
+import { useUiStore } from '../../stores/ui'
+
+const uiStore = useUiStore()
 
 const props = defineProps<{
   disabled?: boolean
@@ -62,6 +65,8 @@ async function startPack(): Promise<void> {
             placeholder="选择包含 layer.json 的地形切片目录"
             select-mode="dir"
             @update:model-value="handleSourceDirChange"
+            @focus="(v) => uiStore.setStatusText(v)"
+            @blur="uiStore.clearStatusText()"
           />
         </NFormItem>
         <NFormItem label="输出文件" required>
@@ -71,6 +76,8 @@ async function startPack(): Promise<void> {
             open-mode="parent"
             select-mode="save"
             :save-default-name="saveDefaultName"
+            @focus="(v) => uiStore.setStatusText(v)"
+            @blur="uiStore.clearStatusText()"
           />
         </NFormItem>
         <NAlert

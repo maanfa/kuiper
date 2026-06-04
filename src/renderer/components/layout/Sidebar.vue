@@ -1,24 +1,24 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import { NScrollbar } from 'naive-ui'
-import { useSidebarStore } from '../../stores/sidebar'
+import type { FunctionItem } from '../../stores/sidebar'
 import FunctionCard from '../sidebar/FunctionCard.vue'
 import FunctionIcon from '../sidebar/FunctionIcon.vue'
 import kuiperRingIcon from '../../assets/KuiperRing.webp'
 
 defineProps<{
   activeRoute: string
+  collapsed: boolean
+  functionItems: FunctionItem[]
 }>()
 
 defineEmits<{
   navigate: [route: string]
 }>()
-
-const store = useSidebarStore()
 </script>
 
 <template>
-  <aside class="sidebar" :class="{ collapsed: store.collapsed }">
+  <aside class="sidebar" :class="{ collapsed }">
     <RouterLink to="/" class="sidebar-home">
       <img
         :src="kuiperRingIcon"
@@ -30,9 +30,9 @@ const store = useSidebarStore()
 
     <NScrollbar class="sidebar-scroll">
       <div class="sidebar-items">
-        <template v-if="!store.collapsed">
+        <template v-if="!collapsed">
           <FunctionCard
-            v-for="item in store.functionItems"
+            v-for="item in functionItems"
             :key="item.id"
             :icon="item.icon"
             :title="item.title"
@@ -43,7 +43,7 @@ const store = useSidebarStore()
         </template>
         <template v-else>
           <FunctionIcon
-            v-for="item in store.functionItems"
+            v-for="item in functionItems"
             :key="item.id"
             :icon="item.icon"
             :title="item.title"

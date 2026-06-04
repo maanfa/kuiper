@@ -2,11 +2,16 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { NButton, NIcon, NTooltip } from 'naive-ui'
 import { SettingsOutline } from '@vicons/ionicons5'
-import { useUiStore } from '../../stores/ui'
+
+defineProps<{
+  showSettings?: boolean
+}>()
+
+const emit = defineEmits<{
+  'toggle-settings': []
+}>()
 
 const api = window.electronAPI
-
-const uiStore = useUiStore()
 
 const isPackaged = ref(true)
 const isMaximized = ref(false)
@@ -61,9 +66,9 @@ function handleClose() {
           <NButton
             size="tiny"
             quaternary
-            :type="uiStore.showSettings ? 'primary' : 'default'"
+            :type="showSettings ? 'primary' : 'default'"
             class="title-bar-settings-btn"
-            @click="uiStore.toggleSettings()"
+            @click="emit('toggle-settings')"
           >
             <template #icon>
               <NIcon size="15">

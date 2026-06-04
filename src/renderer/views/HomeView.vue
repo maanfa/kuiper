@@ -80,11 +80,16 @@ function handleCloseConfirm(result: CloseResult): void {
 
 <template>
   <div class="home-layout">
-    <TitleBar />
+    <TitleBar
+      :show-settings="uiStore.showSettings"
+      @toggle-settings="uiStore.toggleSettings()"
+    />
     <div class="home-body">
       <template v-if="sidebarStore.initialized">
         <Sidebar
           :active-route="currentRoute"
+          :collapsed="sidebarStore.collapsed"
+          :function-items="sidebarStore.functionItems"
           @navigate="handleNavigate"
         />
         <ToggleButton
@@ -103,7 +108,7 @@ function handleCloseConfirm(result: CloseResult): void {
         />
       </main>
     </div>
-    <StatusBar />
+    <StatusBar :status-text="uiStore.statusText" />
   </div>
 </template>
 

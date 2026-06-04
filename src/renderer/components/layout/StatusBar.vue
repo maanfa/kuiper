@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useUiStore } from '../../stores/ui'
-
-const uiStore = useUiStore()
+defineProps<{
+  statusText?: string
+}>()
 </script>
 
 <template>
   <footer class="status-bar">
-    <span>{{ uiStore.statusText }}</span>
+    <span>{{ statusText }}</span>
   </footer>
 </template>
 

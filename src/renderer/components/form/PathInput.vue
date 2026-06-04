@@ -2,9 +2,6 @@
 import { computed } from 'vue'
 import { NInput, NButton, NIcon, NTooltip } from 'naive-ui'
 import { FolderOpenOutline, DocumentOutline, SaveOutline, OpenOutline } from '@vicons/ionicons5'
-import { useUiStore } from '../../stores/ui'
-
-const uiStore = useUiStore()
 
 const props = withDefaults(
   defineProps<{
@@ -31,6 +28,8 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
+  focus: [value: string]
+  blur: []
 }>()
 
 const openTooltipText = computed(() => {
@@ -62,11 +61,11 @@ function handleInput(value: string) {
 }
 
 function handleFocus() {
-  uiStore.setStatusText(props.modelValue)
+  emit('focus', props.modelValue)
 }
 
 function handleBlur() {
-  uiStore.clearStatusText()
+  emit('blur')
 }
 
 async function handleSelect() {

@@ -12,6 +12,9 @@ import {
 } from 'naive-ui'
 import { ChevronDownOutline } from '@vicons/ionicons5'
 import PathInput from '../form/PathInput.vue'
+import { useUiStore } from '../../stores/ui'
+
+const uiStore = useUiStore()
 
 const props = defineProps<{
   disabled?: boolean
@@ -61,6 +64,8 @@ async function startUnpack(): Promise<void> {
             select-mode="file"
             :select-filters="cztrFilter"
             @update:model-value="handleSourceFileChange"
+            @focus="(v) => uiStore.setStatusText(v)"
+            @blur="uiStore.clearStatusText()"
           />
         </NFormItem>
         <NFormItem label="输出目录" required>
@@ -68,6 +73,8 @@ async function startUnpack(): Promise<void> {
             v-model="outputDir"
             placeholder="选择瓦片还原的目标目录"
             select-mode="dir"
+            @focus="(v) => uiStore.setStatusText(v)"
+            @blur="uiStore.clearStatusText()"
           />
         </NFormItem>
         <NFormItem>
