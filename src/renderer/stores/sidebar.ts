@@ -31,20 +31,20 @@ const DEFAULT_ITEMS: FunctionItem[] = [
     icon: markRaw(SwapHorizontalOutline),
   },
   {
-    id: 'inspector',
-    title: '文件查看器',
-    description:
-      '打开并浏览 .cztr 地形包文件，查看内部瓦片索引与元数据信息。',
-    route: '/inspector',
-    icon: markRaw(EyeOutline),
-  },
-  {
     id: 'tileset-converter',
     title: '3DTiles 转换器',
     description:
       '将 3DTiles 数据集（tileset.json + 瓦片文件）打包为单个 .czts SQLite 文件，或从 .czts 文件还原 3DTiles 数据集。',
     route: '/tileset-converter',
     icon: markRaw(CubeOutline),
+  },
+  {
+    id: 'inspector',
+    title: '文件查看器',
+    description:
+      '打开并浏览 .cztr / .czts 文件，查看内部表数据、瓦片详情与 JSON 内容。',
+    route: '/inspector',
+    icon: markRaw(EyeOutline),
   },
 ]
 
