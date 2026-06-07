@@ -27,6 +27,14 @@ function cjsOverridePlugin(): Plugin {
   }
 }
 
+/** 屏蔽 Rolldown 对 vueuse 等第三方包中位置不当的 #__PURE__ 注释产生的 [INVALID_ANNOTATION] 警告 */
+function suppressInvalidAnnotation() {
+  return (level: string, log: { code: string | null }, handler: (level: string, log: unknown) => void) => {
+    if (log.code === 'INVALID_ANNOTATION') return
+    handler(level, log)
+  }
+}
+
 // electron-vite 构建配置，分别定义主进程、预加载脚本和渲染进程的构建参数
 export default defineConfig({
   // 主进程构建
@@ -44,6 +52,7 @@ export default defineConfig({
           chunkFileNames: 'chunks/[name].js',
         },
         external: ['electron', 'electron-builder'],
+        onLog: suppressInvalidAnnotation(),
       },
     },
     plugins: [cjsOverridePlugin()],
@@ -58,6 +67,7 @@ export default defineConfig({
           entryFileNames: '[name].js',
         },
         external: ['electron'],
+        onLog: suppressInvalidAnnotation(),
       },
     },
     plugins: [cjsOverridePlugin()],
@@ -67,6 +77,10 @@ export default defineConfig({
     root: 'src/renderer',
     build: {
       outDir: 'out/renderer',
+      rollupOptions: {
+        input: resolve('src/renderer/index.html'),
+        onLog: suppressInvalidAnnotation(),
+      },
     },
     resolve: {
       alias: {
