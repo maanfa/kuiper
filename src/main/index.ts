@@ -12,7 +12,7 @@ import type { AppConfig, CloseBehavior } from './config'
 import { Logger } from './logger'
 import { TaskManager } from './task/TaskManager'
 import { IPC } from '../shared/ipc-channels'
-import { openCztr, queryCztr, queryCztrRow, queryCztrTile, saveCztrTile, getCztrSummary } from './cztr-inspector'
+import { openCztr, queryCztr, queryCztrRow, queryCztrTile, saveCztrTile, saveTileByUri, getCztrSummary } from './cztr-inspector'
 
 // 修复 Windows 控制台编码，确保中文日志正常显示
 if (process.platform === 'win32') {
@@ -284,11 +284,11 @@ function registerIpcHandlers(): void {
     return result.canceled ? null : result.filePaths[0]
   })
 
-  ipcMain.handle(IPC.DIALOG_SAVE_FILE, async (_event, defaultName: string) => {
+  ipcMain.handle(IPC.DIALOG_SAVE_FILE, async (_event, defaultName: string, filters?: { name: string, extensions: string[] }[]) => {
     if (!win) return null
     const result = await dialog.showSaveDialog(win, {
       defaultPath: defaultName,
-      filters: [{ name: 'CZTR 地形包', extensions: ['cztr'] }],
+      filters: filters || [{ name: '所有文件', extensions: ['*'] }],
     })
     return result.canceled ? null : result.filePath
   })
@@ -356,6 +356,10 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC.CZTR_SAVE_TILE, (_event, filePath: string, z: number, x: number, y: number, destPath: string) => {
     return saveCztrTile(filePath, z, x, y, destPath)
+  })
+
+  ipcMain.handle(IPC.CZTR_SAVE_TILE_BY_URI, (_event, filePath: string, uri: string, destPath: string) => {
+    return saveTileByUri(filePath, uri, destPath)
   })
 
   ipcMain.handle(IPC.CZTR_SUMMARY, (_event, filePath: string) => {

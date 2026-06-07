@@ -1,6 +1,6 @@
 export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
 
-export type TaskType = 'pack' | 'unpack'
+export type TaskType = 'pack' | 'unpack' | 'tileset-pack' | 'tileset-unpack'
 
 export interface TaskConfig {
   type: TaskType
@@ -14,6 +14,9 @@ export interface TaskConfig {
   sourceFile?: string
   outputDir?: string
   clearOutput?: boolean
+  // Tileset
+  tilesetJsonPath?: string
+  tilesetOutputFile?: string
 }
 
 export interface TaskResult {
@@ -43,6 +46,17 @@ export interface PackParams {
 }
 
 export interface UnpackParams {
+  sourceFile: string
+  outputDir: string
+  clearOutput?: boolean
+}
+
+export interface TilesetPackParams {
+  tilesetJsonPath: string
+  outputFile: string
+}
+
+export interface TilesetUnpackParams {
   sourceFile: string
   outputDir: string
   clearOutput?: boolean

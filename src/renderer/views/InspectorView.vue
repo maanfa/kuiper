@@ -7,31 +7,33 @@ import VerticalSplit from '../components/layout/VerticalSplit.vue'
 import PathInput from '../components/form/PathInput.vue'
 import FileTabsPanel from '../components/tool/FileTabsPanel.vue'
 import type { OpenedFile } from '../components/tool/FileTabsPanel.vue'
-import CztrInspectPanel from '../components/tool/CztrInspectPanel.vue'
-import { openCztrFile, queryCztrTable, queryCztrRow, queryCztrTileInfo, formatSize, fetchSummary } from '../utils/cztr-validator'
+import FileInspectPanel from '../components/tool/FileInspectPanel.vue'
+import { openDbFile, queryDbTable, queryDbRow, formatSize, fetchSummary } from '../utils/file-inspector'
+import { queryTileInfo } from '../utils/tile-helper'
 
 const message = useMessage()
 const dialog = useDialog()
 
-const openedFiles = ref<OpenedFile[]>([])
+const openedFiles = ref<(OpenedFile & { fileType?: 'cztr' | 'czts' })[]>([])
 const activeTabName = ref('')
 const inputPath = ref('')
 const selectedRow = ref<Record<string, unknown> | null>(null)
 const summary = ref<CztrSummary | null>(null)
 const skipConfirm = ref(false)
 
-const cztrFilter = [{ name: 'CZTR 地形包', extensions: ['cztr'] as string[] }]
+const dbFilter = [{ name: 'SQLite 数据包 (.cztr, .czts)', extensions: ['cztr', 'czts'] as string[] }]
 
-function getActiveFile(): OpenedFile | undefined {
+function getActiveFile(): (OpenedFile & { fileType?: 'cztr' | 'czts' }) | undefined {
   return openedFiles.value.find((f) => f.path === activeTabName.value)
 }
 
-function createFile(path: string, name: string, tables: string[], tileCount: number): OpenedFile {
+function createFile(path: string, name: string, tables: string[], tileCount: number, fileType?: 'cztr' | 'czts'): OpenedFile & { fileType?: 'cztr' | 'czts' } {
   return {
     path,
     name,
     tables,
     tileCount,
+    fileType,
     activeTable: tables[0] || '',
     search: '',
     columns: [],
@@ -50,14 +52,14 @@ async function handleFileOpen(path: string) {
     return
   }
 
-  const result = await openCztrFile(path)
+  const result = await openDbFile(path)
   if (!result.valid) {
     message.error(result.error || '无效的 CZTR 文件')
     return
   }
 
   const name = path.split(/[/\\]/).pop() || path
-  const file = createFile(path, name, result.tables, result.tileCount)
+  const file = createFile(path, name, result.tables, result.tileCount, result.fileType)
   openedFiles.value.push(file)
   activeTabName.value = path
   loadTable(openedFiles.value[openedFiles.value.length - 1])
@@ -66,7 +68,7 @@ async function handleFileOpen(path: string) {
 
 async function loadTable(file: OpenedFile, search?: string) {
   try {
-    const result = await queryCztrTable(file.path, file.activeTable, search)
+    const result = await queryDbTable(file.path, file.activeTable, search)
     file.columns = result.columns
     file.rows = result.rows
     file.search = search ?? ''
@@ -87,7 +89,25 @@ async function handleRowSelect(row: Record<string, unknown>) {
 
   if (file.activeTable === 'metadata') {
     if (row.key === 'layer_json') {
-      const fullRow = await queryCztrRow(file.path, 'metadata', 'key', 'layer_json')
+      const fullRow = await queryDbRow(file.path, 'metadata', 'key', 'layer_json')
+      if (!fullRow) {
+        selectedRow.value = null
+        return
+      }
+      const value = fullRow.value
+      if (typeof value === 'string') {
+        try {
+          selectedRow.value = JSON.parse(value) as Record<string, unknown>
+        } catch {
+          selectedRow.value = { value }
+        }
+      } else {
+        selectedRow.value = { value }
+      }
+      return
+    }
+    if (row.key === 'root_tileset_json') {
+      const fullRow = await queryDbRow(file.path, 'metadata', 'key', 'root_tileset_json')
       if (!fullRow) {
         selectedRow.value = null
         return
@@ -109,19 +129,64 @@ async function handleRowSelect(row: Record<string, unknown>) {
   }
 
   if (file.activeTable === 'tiles') {
+    // cztr 瓦片：z/x/y 主键
     const z = Number(row.z)
     const x = Number(row.x)
     const y = Number(row.y)
-    if (isNaN(z) || isNaN(x) || isNaN(y)) {
-      selectedRow.value = null
+    if (!isNaN(z) && !isNaN(x) && !isNaN(y)) {
+      const info = await queryTileInfo(file.path, z, x, y)
+      if (!info) {
+        selectedRow.value = null
+        return
+      }
+      selectedRow.value = { z: info.z, x: info.x, y: info.y, 大小: formatSize(info.dataSize) }
       return
     }
-    const info = await queryCztrTileInfo(file.path, z, x, y)
-    if (!info) {
-      selectedRow.value = null
+    // czts 瓦片：uri 主键
+    if (typeof row.uri === 'string') {
+      const fullRow = await queryDbRow(file.path, 'tiles', 'uri', row.uri)
+      if (!fullRow) {
+        selectedRow.value = null
+        return
+      }
+      // IPC 序列化后 BLOB 变为 Uint8Array
+      const rawData = fullRow.data
+      let dataSize = 0
+      if (rawData instanceof Uint8Array || ArrayBuffer.isView(rawData)) {
+        dataSize = (rawData as Uint8Array).byteLength
+      } else if (rawData && typeof rawData === 'object' && 'byteLength' in (rawData as object)) {
+        dataSize = (rawData as ArrayBuffer).byteLength
+      }
+      const uri = fullRow.uri as string
+      const fileName = uri.split('/').pop() || uri
+      const ext = fileName.includes('.') ? fileName.split('.').pop()?.toUpperCase() : '?'
+      selectedRow.value = {
+        文件: fileName,
+        格式: ext || '未知',
+        路径: uri,
+        大小: formatSize(dataSize),
+      }
       return
     }
-    selectedRow.value = { z: info.z, x: info.x, y: info.y, 大小: formatSize(info.dataSize) }
+    selectedRow.value = null
+    return
+  }
+
+  if (file.activeTable === 'tilesets') {
+    if (typeof row.uri === 'string') {
+      const fullRow = await queryDbRow(file.path, 'tilesets', 'uri', row.uri)
+      if (!fullRow || typeof fullRow.data !== 'string') {
+        selectedRow.value = null
+        return
+      }
+      try {
+        selectedRow.value = JSON.parse(fullRow.data) as Record<string, unknown>
+      } catch {
+        selectedRow.value = { uri: fullRow.uri as string, data: fullRow.data as string }
+      }
+      return
+    }
+    selectedRow.value = null
     return
   }
 
@@ -212,7 +277,7 @@ async function handleCloseAll() {
           v-model="inputPath"
           placeholder="选择文件"
           select-mode="file"
-          :select-filters="cztrFilter"
+          :select-filters="dbFilter"
           class="header-path-input"
           @update:model-value="handleFileOpen"
         />
@@ -252,7 +317,7 @@ async function handleCloseAll() {
         </FileTabsPanel>
       </template>
       <template #right>
-        <CztrInspectPanel :row="selectedRow" :cztr-path="activeTabName" :summary="summary" />
+        <FileInspectPanel :row="selectedRow" :cztr-path="activeTabName" :summary="summary" />
       </template>
     </VerticalSplit>
   </div>

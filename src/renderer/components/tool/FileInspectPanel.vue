@@ -5,7 +5,8 @@ import { DownloadOutline, ServerOutline } from '@vicons/ionicons5'
 import SimpleTable from './SimpleTable.vue'
 import type { SimpleColumn } from './SimpleTable.vue'
 import JsonViewer from './JsonViewer.vue'
-import { saveCztrTileData, formatSize } from '../../utils/cztr-validator'
+import { saveTile, saveTileByUri } from '../../utils/tile-helper'
+import { formatSize } from '../../utils/file-inspector'
 
 const props = defineProps<{
   row: Record<string, unknown> | null
@@ -35,23 +36,60 @@ const kvRows = computed(() => {
 const summaryEntries = computed(() => {
   if (!props.summary) return null
   const name = props.cztrPath.split(/[/\\]/).pop() || props.cztrPath
-  const zoom = props.summary.minZoom !== null ? `z${props.summary.minZoom} ~ z${props.summary.maxZoom}` : '—'
-  return [
-    { key: '文件', value: name },
-    { key: '路径', value: props.cztrPath },
-    { key: '大小', value: formatSize(props.summary.fileSize) },
-    { key: '瓦片', value: `${props.summary.tileCount} 个` },
-    { key: '级别', value: zoom },
-    { key: '范围', value: `x[${props.summary.minX ?? '—'}, ${props.summary.maxX ?? '—'}] y[${props.summary.minY ?? '—'}, ${props.summary.maxY ?? '—'}]` },
-  ]
+  const entries: { key: string, value: string }[] = []
+
+  entries.push({ key: '文件', value: name })
+  entries.push({ key: '路径', value: props.cztrPath })
+  entries.push({ key: '大小', value: formatSize(props.summary.fileSize) })
+
+  // czts 文件：显示 binary_count / tileset_count
+  if (props.summary.binaryCount != null) {
+    entries.push({ key: '二进制瓦片', value: `${props.summary.binaryCount} 个` })
+  }
+  if (props.summary.tilesetCount != null) {
+    entries.push({ key: 'tileset', value: `${props.summary.tilesetCount} 个` })
+  }
+  if (props.summary.sourceDirectory) {
+    entries.push({ key: '源目录', value: props.summary.sourceDirectory })
+  }
+
+  // cztr 文件：显示瓦片总数和级别/范围
+  if (props.summary.binaryCount == null) {
+    entries.push({ key: '瓦片', value: `${props.summary.tileCount} 个` })
+  }
+  const zoom = props.summary.minZoom !== null ? `z${props.summary.minZoom} ~ z${props.summary.maxZoom}` : null
+  if (zoom) {
+    entries.push({ key: '级别', value: zoom })
+  }
+  if (props.summary.minX != null) {
+    entries.push({ key: '范围', value: `x[${props.summary.minX}, ${props.summary.maxX}] y[${props.summary.minY}, ${props.summary.maxY}]` })
+  }
+
+  return entries
 })
 
 const isTile = computed(() => {
-  return props.row && 'z' in props.row && 'x' in props.row && 'y' in props.row
+  if (!props.row) return false
+  // cztr 瓦片：z/x/y 主键
+  if ('z' in props.row && 'x' in props.row && 'y' in props.row) return true
+  // czts 瓦片：包含 文件/格式/路径/大小 键
+  if ('文件' in props.row && '路径' in props.row && '格式' in props.row) return true
+  return false
+})
+
+const isCztsTile = computed(() => {
+  if (!props.row) return false
+  return '文件' in props.row && '路径' in props.row && '格式' in props.row && !('z' in props.row)
 })
 
 const tileCoords = computed(() => {
   if (!isTile.value) return null
+  if (isCztsTile.value) {
+    return {
+      uri: props.row!.路径 as string,
+      fileName: props.row!.文件 as string,
+    }
+  }
   return {
     z: Number(props.row!.z),
     x: Number(props.row!.x),
@@ -61,11 +99,25 @@ const tileCoords = computed(() => {
 
 async function handleSaveTile() {
   if (!tileCoords.value) return
-  const { z, x, y } = tileCoords.value
+  if (isCztsTile.value) {
+    // czts：按 uri 保存
+    const { uri, fileName } = tileCoords.value as { uri: string, fileName: string }
+    const destPath = await window.electronAPI.saveFile(fileName)
+    if (!destPath) return
+    const ok = await saveTileByUri(props.cztrPath, uri, destPath)
+    if (ok) {
+      message.success(`已保存: ${destPath}`)
+    } else {
+      message.error('保存失败')
+    }
+    return
+  }
+  // cztr：按 z/x/y 保存
+  const { z, x, y } = tileCoords.value as { z: number, x: number, y: number }
   const defaultName = `tile-${z}-${x}-${y}.terrain`
   const destPath = await window.electronAPI.saveFile(defaultName)
   if (!destPath) return
-  const ok = await saveCztrTileData(props.cztrPath, z, x, y, destPath)
+  const ok = await saveTile(props.cztrPath, z, x, y, destPath)
   if (ok) {
     message.success(`已保存: ${destPath}`)
   } else {

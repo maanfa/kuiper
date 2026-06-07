@@ -5,6 +5,8 @@ import type { TaskConfig } from '../../shared/task-types'
 import { BaseTask } from './BaseTask'
 import { TerrainPackTask } from './TerrainPackTask'
 import { TerrainUnpackTask } from './TerrainUnpackTask'
+import { TilesetPackTask } from './TilesetPackTask'
+import { TilesetUnpackTask } from './TilesetUnpackTask'
 
 export class TaskManager {
   private static instance: TaskManager
@@ -33,8 +35,12 @@ export class TaskManager {
     let task: BaseTask
     if (config.type === 'pack') {
       task = new TerrainPackTask(taskId, config, this.workerScriptDir)
-    } else {
+    } else if (config.type === 'unpack') {
       task = new TerrainUnpackTask(taskId, config, this.workerScriptDir)
+    } else if (config.type === 'tileset-pack') {
+      task = new TilesetPackTask(taskId, config, this.workerScriptDir)
+    } else {
+      task = new TilesetUnpackTask(taskId, config, this.workerScriptDir)
     }
 
     task.on('log', (msg) => {

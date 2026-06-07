@@ -32,6 +32,13 @@ function radioLabel(tableName: string, file: OpenedFile): string {
   }
   return `表 - ${tableName}`
 }
+
+function getSearchPlaceholder(file: OpenedFile): string {
+  if (file.columns.some((c) => c.key === 'uri')) {
+    return '搜索 URI'
+  }
+  return '模糊搜索 z/x/y'
+}
 </script>
 
 <template>
@@ -73,7 +80,7 @@ function radioLabel(tableName: string, file: OpenedFile): string {
           <NInput
             v-if="file.activeTable === 'tiles'"
             :value="file.search"
-            placeholder="模糊搜索 z/x/y"
+            :placeholder="getSearchPlaceholder(file)"
             clearable
             class="search-input"
             @update:value="(v: string) => { emit('search', v) }"

@@ -4,11 +4,12 @@ import { NModal, NCard, NButton } from 'naive-ui'
 
 const props = defineProps<{
   show: boolean
-  type: 'pack' | 'unpack'
+  type: 'pack' | 'unpack' | 'tileset-pack' | 'tileset-unpack'
   sourceDir?: string
   outputFile?: string
   sourceFile?: string
   outputDir?: string
+  tilesetJsonPath?: string
   workerCount: number
 }>()
 
@@ -17,9 +18,32 @@ defineEmits<{
   confirm: []
 }>()
 
-const typeLabel = computed(() => (props.type === 'pack' ? '切片转单文件' : '单文件解包切片'))
-const inputPath = computed(() => (props.type === 'pack' ? props.sourceDir : props.sourceFile) ?? '')
-const outputPath = computed(() => (props.type === 'pack' ? props.outputFile : props.outputDir) ?? '')
+const typeLabel = computed(() => {
+  switch (props.type) {
+    case 'pack': return '切片转单文件'
+    case 'unpack': return '单文件解包切片'
+    case 'tileset-pack': return '3DTiles 数据集转单文件'
+    case 'tileset-unpack': return '单文件还原 3DTiles'
+  }
+})
+const inputPath = computed(() => {
+  switch (props.type) {
+    case 'pack': return props.sourceDir
+    case 'unpack': return props.sourceFile
+    case 'tileset-pack': return props.tilesetJsonPath
+    case 'tileset-unpack': return props.sourceFile
+  }
+  return ''
+})
+const outputPath = computed(() => {
+  switch (props.type) {
+    case 'pack': return props.outputFile
+    case 'unpack': return props.outputDir
+    case 'tileset-pack': return props.outputFile
+    case 'tileset-unpack': return props.outputDir
+  }
+  return ''
+})
 </script>
 
 <template>

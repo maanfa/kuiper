@@ -76,6 +76,7 @@ async function startPack(): Promise<void> {
             open-mode="parent"
             select-mode="save"
             :save-default-name="saveDefaultName"
+            :select-filters="[{ name: 'CZTR 地形包', extensions: ['cztr'] }]"
             @focus="(v) => uiStore.setStatusText(v)"
             @blur="uiStore.clearStatusText()"
           />

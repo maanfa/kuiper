@@ -29,6 +29,11 @@ const router = createRouter({
           name: 'inspector',
           component: () => import('../views/InspectorView.vue'),
         },
+        {
+          path: 'tileset-converter',
+          name: 'tilesetConverter',
+          component: () => import('../views/TilesetConverterView.vue'),
+        },
       ],
     },
   ],

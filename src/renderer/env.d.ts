@@ -51,7 +51,7 @@ interface VersionInfo {
 }
 
 /** 任务类型 */
-type TaskType = 'pack' | 'unpack'
+type TaskType = 'pack' | 'unpack' | 'tileset-pack' | 'tileset-unpack'
 
 /** 任务日志消息 */
 interface TileLogMessage {
@@ -92,9 +92,23 @@ interface UnpackParams {
   batchSize?: number
 }
 
+/** 3DTiles 打包参数 */
+interface TilesetPackParams {
+  tilesetJsonPath: string
+  outputFile: string
+}
+
+/** 3DTiles 解包参数 */
+interface TilesetUnpackParams {
+  sourceFile: string
+  outputDir: string
+  clearOutput?: boolean
+  batchSize?: number
+}
+
 /** 任务启动参数 */
 interface TaskStartConfig {
-  type: 'pack' | 'unpack'
+  type: 'pack' | 'unpack' | 'tileset-pack' | 'tileset-unpack'
   workerCount?: number
   batchSize?: number
   sourceDir?: string
@@ -103,6 +117,8 @@ interface TaskStartConfig {
   sourceFile?: string
   outputDir?: string
   clearOutput?: boolean
+  tilesetJsonPath?: string
+  tilesetOutputFile?: string
 }
 
 /** CZTR 打开结果 */
@@ -111,6 +127,7 @@ interface CztrOpenResult {
   error?: string
   tables: string[]
   tileCount: number
+  fileType?: 'cztr' | 'czts'
 }
 
 /** CZTR 查询结果 */
@@ -130,6 +147,9 @@ interface CztrSummary {
   maxX: number | null
   minY: number | null
   maxY: number | null
+  binaryCount?: number
+  tilesetCount?: number
+  sourceDirectory?: string
 }
 
 /** 暴露到渲染进程的 Electron API */
@@ -148,7 +168,7 @@ interface ElectronAPI {
   onTaskComplete: (cb: (result: TileOpResult) => void) => () => void
   // Dialog API
   openDirectory: () => Promise<string | null>
-  saveFile: (defaultName: string) => Promise<string | null>
+  saveFile: (defaultName: string, filters?: { name: string, extensions: string[] }[]) => Promise<string | null>
   openFile: (filters: { name: string, extensions: string[] }[]) => Promise<string | null>
   saveText: (content: string, defaultName: string) => Promise<boolean>
   // Shell API
@@ -166,6 +186,7 @@ interface ElectronAPI {
   cztrQueryRow: (filePath: string, tableName: string, whereCol: string, whereVal: unknown) => Promise<Record<string, unknown> | null>
   cztrQueryTile: (filePath: string, z: number, x: number, y: number) => Promise<{ z: number, x: number, y: number, dataSize: number } | null>
   cztrSaveTile: (filePath: string, z: number, x: number, y: number, destPath: string) => Promise<boolean>
+  cztrSaveTileByUri: (filePath: string, uri: string, destPath: string) => Promise<boolean>
   cztrSummary: (filePath: string) => Promise<CztrSummary | null>
 }
 

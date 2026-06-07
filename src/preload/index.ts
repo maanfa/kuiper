@@ -34,7 +34,7 @@ try {
     },
     // Dialog API
     openDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
-    saveFile: (defaultName: string) => ipcRenderer.invoke('dialog:saveFile', defaultName),
+    saveFile: (defaultName: string, filters?: unknown) => ipcRenderer.invoke('dialog:saveFile', defaultName, filters),
     openFile: (filters: unknown) => ipcRenderer.invoke('dialog:openFile', filters),
     saveText: (content: string, defaultName: string) => ipcRenderer.invoke('dialog:saveText', content, defaultName),
     // Shell API
@@ -60,6 +60,8 @@ try {
       ipcRenderer.invoke('cztr:query-tile', filePath, z, x, y),
     cztrSaveTile: (filePath: string, z: number, x: number, y: number, destPath: string) =>
       ipcRenderer.invoke('cztr:save-tile', filePath, z, x, y, destPath),
+    cztrSaveTileByUri: (filePath: string, uri: string, destPath: string) =>
+      ipcRenderer.invoke('cztr:save-tile-by-uri', filePath, uri, destPath),
     cztrSummary: (filePath: string) => ipcRenderer.invoke('cztr:summary', filePath),
   })
 } catch (err) {

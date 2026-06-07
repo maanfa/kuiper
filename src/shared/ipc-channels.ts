@@ -29,5 +29,6 @@ export const IPC = {
   CZTR_QUERY_ROW: 'cztr:query-row',
   CZTR_QUERY_TILE: 'cztr:query-tile',
   CZTR_SAVE_TILE: 'cztr:save-tile',
+  CZTR_SAVE_TILE_BY_URI: 'cztr:save-tile-by-uri',
   CZTR_SUMMARY: 'cztr:summary',
 } as const

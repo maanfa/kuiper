@@ -10,8 +10,8 @@ import {
 import ToolHeader from '../components/tool/ToolHeader.vue'
 import VerticalSplit from '../components/layout/VerticalSplit.vue'
 import LogOutput from '../components/tool/LogOutput.vue'
-import TerrainPackForm from '../components/tool/TerrainPackForm.vue'
-import TerrainUnpackForm from '../components/tool/TerrainUnpackForm.vue'
+import TilesetPackForm from '../components/tool/TilesetPackForm.vue'
+import TilesetUnpackForm from '../components/tool/TilesetUnpackForm.vue'
 import ConfirmTaskModal from '../components/tool/ConfirmTaskModal.vue'
 
 const logRef = ref<InstanceType<typeof LogOutput> | null>(null)
@@ -22,9 +22,9 @@ const progressStatus = ref<'default' | 'success' | 'error'>('default')
 const lastProgress = ref(false)
 const workerCount = ref(3)
 const showConfirm = ref(false)
-const pendingType = ref<'pack' | 'unpack'>('pack')
-const pendingPack = ref<PackParams | null>(null)
-const pendingUnpack = ref<(UnpackParams & { clearOutput: boolean }) | null>(null)
+const pendingType = ref<'tileset-pack' | 'tileset-unpack'>('tileset-pack')
+const pendingPack = ref<(TilesetPackParams & { workerCount: number }) | null>(null)
+const pendingUnpack = ref<(TilesetUnpackParams & { workerCount: number, batchSize: number }) | null>(null)
 
 let currentTaskId: string | null = null
 let unlog: (() => void) | null = null
@@ -70,19 +70,15 @@ function addLog(level: string, message: string, timestamp?: number): void {
   logRef.value?.addLog(level, message, timestamp)
 }
 
-function clearLog(): void {
-  logRef.value?.clear()
-}
-
-function onPackStart(params: PackParams & { workerCount: number, batchSize: number }): void {
-  pendingType.value = 'pack'
+function onTilesetPackStart(params: TilesetPackParams & { workerCount: number }): void {
+  pendingType.value = 'tileset-pack'
   pendingPack.value = params
   pendingUnpack.value = null
   showConfirm.value = true
 }
 
-function onUnpackStart(params: UnpackParams & { workerCount: number, clearOutput: boolean, batchSize: number }): void {
-  pendingType.value = 'unpack'
+function onTilesetUnpackStart(params: TilesetUnpackParams & { workerCount: number, batchSize: number }): void {
+  pendingType.value = 'tileset-unpack'
   pendingUnpack.value = params
   pendingPack.value = null
   showConfirm.value = true
@@ -91,9 +87,21 @@ function onUnpackStart(params: UnpackParams & { workerCount: number, clearOutput
 function handleConfirm(): void {
   showConfirm.value = false
   if (pendingPack.value) {
-    startTask({ type: 'pack', ...pendingPack.value } as TaskStartConfig)
+    startTask({
+      type: 'tileset-pack',
+      tilesetJsonPath: pendingPack.value.tilesetJsonPath,
+      tilesetOutputFile: pendingPack.value.outputFile,
+      workerCount: workerCount.value,
+    } as TaskStartConfig)
   } else if (pendingUnpack.value) {
-    startTask({ type: 'unpack', ...pendingUnpack.value } as TaskStartConfig)
+    startTask({
+      type: 'tileset-unpack',
+      sourceFile: pendingUnpack.value.sourceFile,
+      outputDir: pendingUnpack.value.outputDir,
+      clearOutput: pendingUnpack.value.clearOutput,
+      workerCount: workerCount.value,
+      batchSize: pendingUnpack.value.batchSize,
+    } as TaskStartConfig)
   }
 }
 
@@ -155,7 +163,7 @@ async function cancelTask(): Promise<void> {
 <template>
   <div class="converter-view">
     <ToolHeader>
-      <template #title>地形切片转换器</template>
+      <template #title>3DTiles 转换器</template>
       <template #actions>
         <div class="worker-count-row">
           <span class="worker-label">并行数</span>
@@ -199,22 +207,22 @@ async function cancelTask(): Promise<void> {
     >
       <template #left>
         <div class="left-panel">
-          <NTabs type="bar" :default-value="'pack'">
-            <NTabPane name="pack" tab="切片转单文件">
+          <NTabs type="bar" :default-value="'tileset-pack'">
+            <NTabPane name="tileset-pack" tab="数据集转单文件">
               <div class="tab-content">
-                <TerrainPackForm
+                <TilesetPackForm
                   :disabled="running"
                   :running="running"
-                  @pack-start="onPackStart"
+                  @tileset-pack-start="onTilesetPackStart"
                 />
               </div>
             </NTabPane>
-            <NTabPane name="unpack" tab="单文件解包切片">
+            <NTabPane name="tileset-unpack" tab="单文件还原数据">
               <div class="tab-content">
-                <TerrainUnpackForm
+                <TilesetUnpackForm
                   :disabled="running"
                   :running="running"
-                  @unpack-start="onUnpackStart"
+                  @tileset-unpack-start="onTilesetUnpackStart"
                 />
               </div>
             </NTabPane>
@@ -229,7 +237,7 @@ async function cancelTask(): Promise<void> {
     <ConfirmTaskModal
       :show="showConfirm"
       :type="pendingType"
-      :source-dir="pendingPack?.sourceDir"
+      :tileset-json-path="pendingPack?.tilesetJsonPath"
       :output-file="pendingPack?.outputFile"
       :source-file="pendingUnpack?.sourceFile"
       :output-dir="pendingUnpack?.outputDir"

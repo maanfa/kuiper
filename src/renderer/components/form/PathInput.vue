@@ -80,6 +80,7 @@ async function handleSelect() {
     case 'save': {
       const path = await window.electronAPI.saveFile(
         props.saveDefaultName || '',
+        props.selectFilters,
       )
       if (path) emit('update:modelValue', path)
       break

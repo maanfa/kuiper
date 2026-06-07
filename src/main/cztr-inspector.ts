@@ -5,6 +5,7 @@ export interface CztrOpenResult {
   error?: string
   tables: string[]
   tileCount: number
+  fileType?: 'cztr' | 'czts'
 }
 
 export interface CztrQueryResult {
@@ -21,6 +22,9 @@ export interface CztrSummary {
   maxX: number | null
   minY: number | null
   maxY: number | null
+  binaryCount?: number
+  tilesetCount?: number
+  sourceDirectory?: string
 }
 
 function columnType(type: string): 'integer' | 'text' | 'blob' | 'real' {
@@ -51,20 +55,30 @@ export function openCztr(filePath: string): CztrOpenResult {
 
     const hasTiles = tables.includes('tiles')
     const hasMetadata = tables.includes('metadata')
+    const hasTilesets = tables.includes('tilesets')
 
-    if (!hasTiles || !hasMetadata) {
-      const missing: string[] = []
-      if (!hasTiles) missing.push('tiles')
-      if (!hasMetadata) missing.push('metadata')
+    // czts: 需要 tiles + tilesets + metadata 三张表
+    if (hasTiles && hasTilesets && hasMetadata) {
+      const countRow = db.prepare('SELECT COUNT(*) AS cnt FROM tiles').get() as { cnt: number }
+      const tileCount = countRow?.cnt ?? 0
       db.close()
-      return { valid: false, error: `缺少关键表: ${missing.join(', ')}`, tables, tileCount: 0 }
+      return { valid: true, tables, tileCount, fileType: 'czts' }
     }
 
-    const countRow = db.prepare('SELECT COUNT(*) AS cnt FROM tiles').get() as { cnt: number }
-    const tileCount = countRow?.cnt ?? 0
-    db.close()
+    // cztr: 需要 tiles + metadata 两张表
+    if (hasTiles && hasMetadata) {
+      const countRow = db.prepare('SELECT COUNT(*) AS cnt FROM tiles').get() as { cnt: number }
+      const tileCount = countRow?.cnt ?? 0
+      db.close()
+      return { valid: true, tables, tileCount, fileType: 'cztr' }
+    }
 
-    return { valid: true, tables, tileCount }
+    // 缺少关键表
+    const missing: string[] = []
+    if (!hasTiles) missing.push('tiles')
+    if (!hasMetadata) missing.push('metadata')
+    db.close()
+    return { valid: false, error: `缺少关键表: ${missing.join(', ')}`, tables, tileCount: 0 }
   } catch (err) {
     try { db.close() } catch { /* ignore */ }
     return { valid: false, error: `校验失败: ${(err as Error).message}`, tables: [], tileCount: 0 }
@@ -105,13 +119,27 @@ export function queryCztr(filePath: string, tableName: string, search?: string):
     if (tableName === 'metadata') {
       sql = 'SELECT key, value FROM metadata'
     } else if (tableName === 'tiles') {
-      sql = "SELECT z, x, y, '[RAW BLOB]' AS data FROM tiles"
-      if (search) {
-        const pattern = `%${search}%`
-        sql += ' WHERE (CAST(z AS TEXT) || \'/\' || CAST(x AS TEXT) || \'/\' || CAST(y AS TEXT)) LIKE ?'
-        params = [pattern]
+      // 检测 tiles 表结构：czts 用 uri 做主键，cztr 用 z/x/y
+      const hasUri = colRows.some((c) => c.name === 'uri')
+      if (hasUri) {
+        sql = "SELECT uri, '[RAW BLOB]' AS data FROM tiles"
+        if (search) {
+          sql += ' WHERE uri LIKE ?'
+          params = [`%${search}%`]
+        }
+        sql += ' LIMIT 100'
+      } else {
+        sql = "SELECT z, x, y, '[RAW BLOB]' AS data FROM tiles"
+        if (search) {
+          const pattern = `%${search}%`
+          sql += ' WHERE (CAST(z AS TEXT) || \'/\' || CAST(x AS TEXT) || \'/\' || CAST(y AS TEXT)) LIKE ?'
+          params = [pattern]
+        }
+        sql += ' LIMIT 100'
       }
-      sql += ' LIMIT 100'
+    } else if (tableName === 'tilesets') {
+      // czts tilesets 表：显示 uri 和截断的 JSON
+      sql = "SELECT uri, CASE WHEN length(data) > 200 THEN substr(data, 1, 200) || '…' ELSE data END AS data FROM tilesets LIMIT 100"
     } else {
       schemaSafe(tableName)
       sql = `SELECT * FROM "${tableName}" LIMIT 100`
@@ -203,6 +231,27 @@ export function saveCztrTile(filePath: string, z: number, x: number, y: number, 
   }
 }
 
+/** 根据 URI 保存 czts tiles 表中的二进制瓦片到指定路径 */
+export function saveTileByUri(filePath: string, uri: string, destPath: string): boolean {
+  const db = new DatabaseSync(filePath)
+
+  try {
+    const stmt = db.prepare('SELECT data FROM tiles WHERE uri = ?')
+    const row = stmt.get(uri) as { data: Buffer } | undefined
+    if (!row || !row.data) {
+      db.close()
+      return false
+    }
+    const fs = require('node:fs') as typeof import('node:fs')
+    fs.writeFileSync(destPath, row.data)
+    db.close()
+    return true
+  } catch {
+    try { db.close() } catch { /* ignore */ }
+    return false
+  }
+}
+
 export function getCztrSummary(filePath: string): CztrSummary | null {
   const db = new DatabaseSync(filePath)
   try {
@@ -215,8 +264,15 @@ export function getCztrSummary(filePath: string): CztrSummary | null {
     let maxX: number | null = null
     let minY: number | null = null
     let maxY: number | null = null
+    let binaryCount: number | undefined
+    let tilesetCount: number | undefined
+    let sourceDirectory: string | undefined
 
-    if (tileCount > 0) {
+    // 检测 tiles 表结构
+    const colRows = db.prepare("PRAGMA table_info('tiles')").all() as { name: string }[]
+    const hasZ = colRows.some((c) => c.name === 'z')
+
+    if (hasZ && tileCount > 0) {
       const zoomRow = db.prepare('SELECT MIN(z) AS minZ, MAX(z) AS maxZ FROM tiles').get() as { minZ: number, maxZ: number }
       minZoom = zoomRow?.minZ ?? null
       maxZoom = zoomRow?.maxZ ?? null
@@ -228,10 +284,22 @@ export function getCztrSummary(filePath: string): CztrSummary | null {
       maxY = boundsRow?.maxY ?? null
     }
 
+    // 尝试读取 metadata 表的 czts 扩展字段（cztr 也会尝试，静默忽略）
+    try {
+      const metaRows = db.prepare('SELECT key, value FROM metadata').all() as { key: string, value: string }[]
+      for (const row of metaRows) {
+        if (row.key === 'binary_count') binaryCount = Number(row.value)
+        if (row.key === 'tileset_count') tilesetCount = Number(row.value)
+        if (row.key === 'source_directory') sourceDirectory = row.value
+      }
+    } catch {
+      // metadata 表可能不包含这些字段，忽略
+    }
+
     const fs = require('node:fs') as typeof import('node:fs')
     const fileSize = fs.statSync(filePath).size
     db.close()
-    return { fileSize, tileCount, minZoom, maxZoom, minX, maxX, minY, maxY }
+    return { fileSize, tileCount, minZoom, maxZoom, minX, maxX, minY, maxY, binaryCount, tilesetCount, sourceDirectory }
   } catch {
     try { db.close() } catch { /* ignore */ }
     return null
