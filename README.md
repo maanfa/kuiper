@@ -1,6 +1,13 @@
 # 柯伊伯方盒 (kuiper-box)
 
-基于 Electron + Vue3 + Naive UI 构建的桌面应用程序。
+基于 Electron + Vue3 + Naive UI 构建的桌面应用程序，提供地形切片转换、3DTiles 转换及 SQLite 数据包浏览等地理信息数据处理工具。
+
+## 功能
+
+- **地形切片转换器** — 将 Cesium Quantized TerrainMesh 瓦片目录打包为 `.cztr` 容器，或从 `.cztr` 还原瓦片目录
+- **3DTiles 转换器** — 将 3DTiles 数据集（tileset.json + 瓦片文件）打包为 `.czts` 容器，或从 `.czts` 还原数据集
+- **文件查看器** — 打开并浏览 `.cztr` / `.czts` 文件，查看内部表数据、瓦片详情和 JSON 内容
+- **地形切片生成器**（待实现）— TMS/WMTS 标准瓦片生成
 
 ## 技术栈
 
@@ -53,7 +60,7 @@ kuiper/
 │   │   ├── router/      # 路由配置
 │   │   └── utils/       # 工具函数
 │   └── shared/       # 主进程/渲染进程共享模块
-├── docs/wiki/        # 功能说明文档
+├── skills/           # 功能说明文档（skill 格式，各自独立目录 + SKILL.md）
 ├── scripts/          # 构建脚本
 ├── electron.vite.config.ts
 ├── electron-builder.yml
@@ -63,9 +70,11 @@ kuiper/
 
 ## 工具文档
 
-- [地形切片转换器](docs/wiki/terrain_tile_converter.md) —— 打包/解包 Cesium Quantized TerrainMesh 切片
-- [文件查看器](docs/wiki/file_inspector.md) —— 浏览 .cztr 文件，查看瓦片索引、元数据及 layer.json 内容
-- [CZTR 文件格式](docs/wiki/cztr_format.md) —— .cztr 容器文件的 Schema 与校验规则
+- [地形切片转换器](skills/terrain-tile-converter/SKILL.md) — 打包/解包 Cesium Quantized TerrainMesh 切片
+- [3DTiles 转换器](skills/tileset-converter/SKILL.md)（待创建）— 打包/解包 3DTiles 数据集
+- [文件查看器](skills/file-inspector/SKILL.md) — 浏览 .cztr / .czts 文件，查看表数据与瓦片详情
+- [CZTR 文件格式](skills/cztr-format/SKILL.md) — .cztr 容器的 Schema 与校验规则
+- [CZTS 文件格式](skills/czts-format/SKILL.md) — .czts 容器的 Schema、打包规则及与 CZTR 的对比
 
 ## 许可证
 

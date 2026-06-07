@@ -69,9 +69,29 @@
 - 编码统一使用 UTF-8，确保中文不乱码
 - 打包模式下仅当 yml 中配置了 `logging.filePath` 时才输出日志文件
 
-## 事件系统
+## 文件格式约定
 
-- 主进程中需要 EventEmitter 时，使用社区包 `eventemitter3`，不使用 Node.js 内置 `events` 模块
+- `.cztr` — 地形切片 SQLite 容器（tiles + metadata 两张表，z/x/y 主键）
+- `.czts` — 3DTiles SQLite 容器（tiles + tilesets + metadata 三张表，uri 主键）
+- 两种格式均可由文件查看器打开浏览，schema 详见 `skills/cztr-format/SKILL.md` / `skills/czts-format/SKILL.md`
+
+## 任务系统
+
+- `TaskType` 联合类型：`'pack'` | `'unpack'` | `'tileset-pack'` | `'tileset-unpack'`
+- 所有任务通过 `TaskManager` 单例调度，使用 `BaseTask` → `TerrainPackTask` / `TerrainUnpackTask` / `TilesetPackTask` / `TilesetUnpackTask` 层次
+- 任务事件（log/progress/complete）通过 IPC 推送到渲染进程，通道常量集中在 `shared/ipc-channels.ts`
+
+## 组件命名规范
+
+- 表单组件遵循 `<业务前缀><操作>Form` 模式：
+  - `TerrainPackForm.vue` / `TerrainUnpackForm.vue` — 地形切片打包/解包
+  - `TilesetPackForm.vue` / `TilesetUnpackForm.vue` — 3DTiles 打包/解包
+- 工具类组件以功能描述命名：`FileInspectPanel.vue`、`FileTabsPanel.vue`、`LogOutput.vue`
+
+## 前端工具函数
+
+- `utils/file-inspector.ts` — 通用 SQLite 文件查看函数（openDbFile / queryDbTable / queryDbRow / fetchSummary / formatSize）
+- `utils/tile-helper.ts` — 瓦片专用操作函数（queryTileInfo / saveTile / saveTileByUri）
 
 ## VerticalSplit 组件规范
 
