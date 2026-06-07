@@ -1,3 +1,8 @@
+---
+name: cztr-format
+description: CZTR 文件格式规范——SQLite 地形切片容器的 Schema、元数据键名和校验规则。
+---
+
 # CZTR 文件格式
 
 `.cztr` 为 SQLite 数据库容器文件，是柯伊伯方盒中地形切片打包/解包功能的中间格式。

@@ -1,3 +1,8 @@
+---
+name: terrain-tile-converter
+description: 地形切片转换器功能文档——Cesium Quantized TerrainMesh 瓦片打包为 .cztr 或从 .cztr 解包还原。
+---
+
 # 地形切片转换器
 
 Cesium Quantized TerrainMesh 格式的切片打包与解包工具。支持将瓦片目录（TMS 结构）打包为单个 `.cztr` 容器文件，或从 `.cztr` 容器还原为瓦片目录。

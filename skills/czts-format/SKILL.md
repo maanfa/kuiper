@@ -1,3 +1,8 @@
+---
+name: czts-format
+description: CZTS 文件格式规范——SQLite 3DTiles 容器的 Schema、打包规则、校验规则及与 CZTR 的对比。
+---
+
 # CZTS 文件格式
 
 `.czts` 为 SQLite 数据库容器文件，是柯伊伯方盒中 3DTiles 打包/解包功能的中间格式。它将完整的 3DTiles 数据集（`tileset.json` + 二进制瓦片 + 外部 tileset）打包为单一文件。

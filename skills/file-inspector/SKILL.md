@@ -1,3 +1,8 @@
+---
+name: file-inspector
+description: 文件查看器功能文档——打开 .cztr/.czts 文件，浏览表数据、查看瓦片信息和 JSON 详情。
+---
+
 # 文件查看器
 
 打开并浏览 `.cztr` 地形包文件，查看内部瓦片索引、元数据及图层配置信息。
