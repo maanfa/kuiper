@@ -32,6 +32,25 @@ try {
       ipcRenderer.on('task:complete', handler)
       return () => { ipcRenderer.removeListener('task:complete', handler) }
     },
+    // Server API
+    serverStart: (config: unknown) => ipcRenderer.invoke('server:start', config),
+    serverStop: () => ipcRenderer.invoke('server:stop'),
+    serverStatus: () => ipcRenderer.invoke('server:status'),
+    serverUpdateFiles: (files: unknown) => ipcRenderer.invoke('server:update-files', files),
+    serverPoolStatus: () => ipcRenderer.invoke('server:pool-status'),
+    onServerClosePrompt: (cb: () => void) => {
+      const handler = () => cb()
+      ipcRenderer.on('server:close-prompt', handler)
+      return () => { ipcRenderer.removeListener('server:close-prompt', handler) }
+    },
+    sendServerCloseResult: (confirmed: boolean) => {
+      ipcRenderer.send('server:close-result', confirmed)
+    },
+    onServerLog: (cb: (entry: unknown) => void) => {
+      const handler = (_event: unknown, entry: unknown) => cb(entry)
+      ipcRenderer.on('server:log', handler)
+      return () => { ipcRenderer.removeListener('server:log', handler) }
+    },
     // Dialog API
     openDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
     saveFile: (defaultName: string, filters?: unknown) => ipcRenderer.invoke('dialog:saveFile', defaultName, filters),
@@ -39,6 +58,7 @@ try {
     saveText: (content: string, defaultName: string) => ipcRenderer.invoke('dialog:saveText', content, defaultName),
     // Shell API
     openPath: (targetPath: string) => ipcRenderer.invoke('shell:openPath', targetPath),
+    openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
     // Window control API
     minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
     maximizeWindow: () => ipcRenderer.invoke('window:maximize'),

@@ -9,6 +9,7 @@ import TitleBar from '../components/layout/TitleBar.vue'
 import StatusBar from '../components/layout/StatusBar.vue'
 import SettingsPanel from '../components/settings/SettingsPanel.vue'
 import ClosePromptDialog from '../components/dialog/ClosePromptDialog.vue'
+import ServerCloseDialog from '../components/dialog/ServerCloseDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -20,8 +21,11 @@ const currentRoute = ref(route.path)
 
 /** 关闭询问弹窗显示状态 */
 const showClosePrompt = ref(false)
+/** 服务关闭确认弹窗 */
+const showServerClosePrompt = ref(false)
 /** 关闭监听清理函数 */
 let cleanupCloseListener: (() => void) | null = null
+let cleanupServerCloseListener: (() => void) | null = null
 
 /** 从持久化配置恢复侧边栏状态，注册关闭询问监听 */
 onMounted(async () => {
@@ -38,10 +42,14 @@ onMounted(async () => {
   cleanupCloseListener = window.electronAPI.onClosePrompt(() => {
     showClosePrompt.value = true
   })
+  cleanupServerCloseListener = window.electronAPI.onServerClosePrompt(() => {
+    showServerClosePrompt.value = true
+  })
 })
 
 onUnmounted(() => {
   cleanupCloseListener?.()
+  cleanupServerCloseListener?.()
 })
 
 /** 侧边栏状态变更时写回配置文件 */
@@ -76,6 +84,16 @@ function handleCloseConfirm(result: CloseResult): void {
   showClosePrompt.value = false
   window.electronAPI?.sendCloseResult(result)
 }
+
+function handleServerCloseConfirm(): void {
+  showServerClosePrompt.value = false
+  window.electronAPI?.sendServerCloseResult(true)
+}
+
+function handleServerCloseCancel(): void {
+  showServerClosePrompt.value = false
+  window.electronAPI?.sendServerCloseResult(false)
+}
 </script>
 
 <template>
@@ -109,6 +127,12 @@ function handleCloseConfirm(result: CloseResult): void {
           :show="showClosePrompt"
           @confirm="handleCloseConfirm"
           @close="showClosePrompt = false"
+        />
+        <ServerCloseDialog
+          v-if="showServerClosePrompt"
+          :show="showServerClosePrompt"
+          @confirm="handleServerCloseConfirm"
+          @close="handleServerCloseCancel"
         />
       </main>
     </div>

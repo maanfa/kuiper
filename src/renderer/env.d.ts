@@ -29,6 +29,38 @@ interface CloseResult {
   remember: boolean
 }
 
+/** 服务端文件条目 */
+interface ServerFileEntry {
+  id: string
+  path: string
+  enabled: boolean
+}
+
+/** 连接池状态 */
+interface PoolStatus {
+  total: number
+  max: number
+  entries: { path: string, lastAccess: number }[]
+}
+
+/** 服务端配置 */
+interface ServerConfig {
+  port: number
+  prefix: string
+  maxConnections: number
+  files: ServerFileEntry[]
+}
+
+/** 服务端日志条目 */
+interface ServerLogEntry {
+  timestamp: number
+  method: string
+  path: string
+  status: number
+  fileId?: string
+  duration: number
+}
+
 /** 应用配置 */
 interface AppConfig {
   windowBounds: WindowBounds
@@ -38,6 +70,7 @@ interface AppConfig {
   closeBehavior: CloseBehavior
   logging: LoggingConfig
   task: TaskWorkerConfig
+  server?: ServerConfig
   env?: Record<string, string>
 }
 
@@ -152,6 +185,12 @@ interface CztrSummary {
   sourceDirectory?: string
 }
 
+/** 服务端操作结果 */
+interface ServerOpResult {
+  success: boolean
+  error?: string
+}
+
 /** 暴露到渲染进程的 Electron API */
 interface ElectronAPI {
   getConfig: () => Promise<AppConfig>
@@ -166,6 +205,15 @@ interface ElectronAPI {
   onTaskLog: (cb: (msg: TileLogMessage) => void) => () => void
   onTaskProgress: (cb: (p: TileProgress) => void) => () => void
   onTaskComplete: (cb: (result: TileOpResult) => void) => () => void
+  // Server API
+  serverStart: (config: ServerConfig) => Promise<ServerOpResult>
+  serverStop: () => Promise<ServerOpResult>
+  serverStatus: () => Promise<'running' | 'stopped'>
+  serverUpdateFiles: (files: ServerFileEntry[]) => Promise<void>
+  serverPoolStatus: () => Promise<PoolStatus | null>
+  onServerClosePrompt: (cb: () => void) => () => void
+  sendServerCloseResult: (confirmed: boolean) => void
+  onServerLog: (cb: (entry: ServerLogEntry) => void) => () => void
   // Dialog API
   openDirectory: () => Promise<string | null>
   saveFile: (defaultName: string, filters?: { name: string, extensions: string[] }[]) => Promise<string | null>
@@ -173,6 +221,7 @@ interface ElectronAPI {
   saveText: (content: string, defaultName: string) => Promise<boolean>
   // Shell API
   openPath: (targetPath: string) => Promise<void>
+  openExternal: (url: string) => Promise<void>
   // Window control API
   minimizeWindow: () => Promise<void>
   maximizeWindow: () => Promise<void>

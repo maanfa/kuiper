@@ -34,6 +34,11 @@ const router = createRouter({
           name: 'tilesetConverter',
           component: () => import('../views/TilesetConverterView.vue'),
         },
+        {
+          path: 'static-server',
+          name: 'staticServer',
+          component: () => import('../views/StaticServerView.vue'),
+        },
       ],
     },
   ],

@@ -1,4 +1,4 @@
-export type ToolCategory = 'processor' | 'inspector'
+export type ToolCategory = 'processor' | 'inspector' | 'static-server'
 
 export interface ToolDefinition {
   id: string
@@ -11,9 +11,10 @@ export interface ToolDefinition {
 export const CATEGORY_LABELS: Record<ToolCategory, string> = {
   processor: '数据处理',
   inspector: '观察工具',
+  'static-server': '静态服务',
 }
 
-export const CATEGORY_ORDER: ToolCategory[] = ['processor', 'inspector']
+export const CATEGORY_ORDER: ToolCategory[] = ['processor', 'inspector', 'static-server']
 
 export const ALL_TOOLS: ToolDefinition[] = [
   {
@@ -47,6 +48,14 @@ export const ALL_TOOLS: ToolDefinition[] = [
       '打开并浏览 .cztr / .czts 文件，查看内部表数据、瓦片详情与 JSON 内容。',
     route: '/inspector',
     category: 'inspector',
+  },
+  {
+    id: 'static-server',
+    title: '静态托管服务',
+    description:
+      '启动本地静态文件服务，将 .cztr / .czts 文件以 RESTful API 形式对外暴露，支持地形瓦片和 3DTiles 数据的按需访问。',
+    route: '/static-server',
+    category: 'static-server',
   },
 ]
 

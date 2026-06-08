@@ -12,7 +12,9 @@ import type { AppConfig, CloseBehavior } from './config'
 import { Logger } from './logger'
 import { TaskManager } from './task/TaskManager'
 import { IPC } from '../shared/ipc-channels'
+import type { ServerConfig, ServerFileEntry, ServerLogEntry } from '../shared/server-types'
 import { openCztr, queryCztr, queryCztrRow, queryCztrTile, saveCztrTile, saveTileByUri, getCztrSummary } from './cztr-inspector'
+import { StaticServer } from './server/StaticServer'
 
 // 修复 Windows 控制台编码，确保中文日志正常显示
 if (process.platform === 'win32') {
@@ -27,6 +29,8 @@ let tray: Tray | null = null
 let logger: Logger | null = null
 /** 是否强制退出（用于跳过关闭拦截） */
 let forceQuit = false
+/** 静态文件服务器实例 */
+let staticServer: StaticServer | null = null
 
 /**
  * 获取应用图标文件的绝对路径
@@ -150,6 +154,14 @@ function createWindow(cfg: AppConfig): void {
   // 关闭窗口时检查关闭行为配置
   win.on('close', (e) => {
     if (!win || forceQuit) return
+
+    // 若静态服务正在运行，二次确认
+    if (staticServer?.getStatus() === 'running') {
+      e.preventDefault()
+      win.webContents.send(IPC.SERVER_CLOSE_PROMPT)
+      return
+    }
+
     const curCfg = loadAppConfig()
     // 仅保存上次正常窗口的宽高，位置由启动时自动居中计算
     const currentBounds = win.getBounds()
@@ -225,6 +237,13 @@ function createTray(): void {
   tray.setContextMenu(contextMenu)
 }
 
+/** 保存服务端配置到 app.config.yml */
+function saveServerConfig(config: ServerConfig): void {
+  const cfg = loadAppConfig()
+  cfg.server = config
+  saveAppConfig(cfg)
+}
+
 /** 注册 IPC 处理器，供渲染进程读写配置 */
 function registerIpcHandlers(): void {
   const taskManager = TaskManager.getInstance()
@@ -266,6 +285,18 @@ function registerIpcHandlers(): void {
     },
   )
 
+  ipcMain.on(
+    IPC.SERVER_CLOSE_RESULT,
+    (_event, confirmed: boolean) => {
+      if (confirmed) {
+        staticServer?.stop()
+        staticServer = null
+        forceQuit = true
+        app.quit()
+      }
+    },
+  )
+
   // Task API
   ipcMain.handle(IPC.TASK_START, (_event, config) => {
     return taskManager.start(config)
@@ -273,6 +304,53 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC.TASK_CANCEL, (_event, taskId: string) => {
     return taskManager.cancel(taskId)
+  })
+
+  // Server API
+  ipcMain.handle(IPC.SERVER_START, async (_event, config: ServerConfig) => {
+    try {
+      if (!staticServer) {
+        staticServer = new StaticServer()
+      }
+      await staticServer.start(config, (entry: ServerLogEntry) => {
+        win?.webContents.send(IPC.SERVER_LOG, entry)
+      })
+      saveServerConfig(config)
+      logger?.info(`静态服务已启动，端口 ${config.port}`)
+      return { success: true }
+    } catch (err) {
+      logger?.error('启动静态服务失败:', (err as Error).message)
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle(IPC.SERVER_STOP, async () => {
+    try {
+      staticServer?.stop()
+      staticServer = null
+      logger?.info('静态服务已停止')
+      return { success: true }
+    } catch (err) {
+      logger?.error('停止静态服务失败:', (err as Error).message)
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle(IPC.SERVER_STATUS, () => {
+    return staticServer?.getStatus() ?? 'stopped'
+  })
+
+  ipcMain.handle(IPC.SERVER_UPDATE_FILES, (_event, files: ServerFileEntry[]) => {
+    staticServer?.updateFiles(files)
+    const cfg = loadAppConfig()
+    if (cfg.server) {
+      cfg.server.files = files
+      saveAppConfig(cfg)
+    }
+  })
+
+  ipcMain.handle(IPC.SERVER_POOL_STATUS, () => {
+    return staticServer?.getPoolStatus() ?? null
   })
 
   // Dialog API
@@ -319,6 +397,10 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC.SHELL_OPEN_PATH, (_event, targetPath: string) => {
     shell.openPath(targetPath)
+  })
+
+  ipcMain.handle(IPC.SHELL_OPEN_EXTERNAL, (_event, url: string) => {
+    shell.openExternal(url)
   })
 
   // 窗口控制
@@ -393,8 +475,14 @@ app.whenReady().then(() => {
 
 // 所有窗口关闭时退出应用（macOS 除外）
 app.on('window-all-closed', () => {
-  logger?.close()
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+// 退出前清理
+app.on('before-quit', () => {
+  staticServer?.stop()
+  staticServer = null
+  forceQuit = true
 })

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const props = withDefaults(defineProps<{
   initialRatio?: number
   minLeftWidth?: number
   minRightWidth?: number
+  storageKey?: string
 }>(), {
   initialRatio: 0.5,
   minLeftWidth: 200,
@@ -18,6 +19,24 @@ const emit = defineEmits<{
 const containerRef = ref<HTMLElement | null>(null)
 const leftRatio = ref(props.initialRatio)
 
+onMounted(() => {
+  if (props.storageKey) {
+    const stored = localStorage.getItem(`split:${props.storageKey}`)
+    if (stored) {
+      const v = parseFloat(stored)
+      if (!isNaN(v) && v > 0 && v < 1) {
+        leftRatio.value = v
+      }
+    }
+  }
+})
+
+function saveRatio(r: number) {
+  if (props.storageKey) {
+    localStorage.setItem(`split:${props.storageKey}`, r.toString())
+  }
+}
+
 function onDividerDragStart(e: MouseEvent) {
   e.preventDefault()
   const container = containerRef.value
@@ -25,7 +44,7 @@ function onDividerDragStart(e: MouseEvent) {
 
   const rect = container.getBoundingClientRect()
   const total = rect.width
-  const dividerSpace = 20 // width(4px) + margin-left(8px) + margin-right(8px)
+  const dividerSpace = 20
   const usable = total - dividerSpace
   const minLeftRatio = Math.min(props.minLeftWidth / usable, 1)
   const minRightRatio = Math.min(props.minRightWidth / usable, 1)
@@ -40,6 +59,7 @@ function onDividerDragStart(e: MouseEvent) {
   function onUp() {
     document.removeEventListener('mousemove', onMove)
     document.removeEventListener('mouseup', onUp)
+    saveRatio(leftRatio.value)
   }
 
   document.addEventListener('mousemove', onMove)

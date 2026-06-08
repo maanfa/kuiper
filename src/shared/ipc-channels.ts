@@ -8,6 +8,16 @@ export const IPC = {
   TASK_PROGRESS: 'task:progress',
   TASK_COMPLETE: 'task:complete',
 
+  // Static server
+  SERVER_START: 'server:start',
+  SERVER_STOP: 'server:stop',
+  SERVER_STATUS: 'server:status',
+  SERVER_LOG: 'server:log',
+  SERVER_UPDATE_FILES: 'server:update-files',
+  SERVER_POOL_STATUS: 'server:pool-status',
+  SERVER_CLOSE_PROMPT: 'server:close-prompt',
+  SERVER_CLOSE_RESULT: 'server:close-result',
+
   // Dialog
   DIALOG_OPEN_DIR: 'dialog:openDirectory',
   DIALOG_SAVE_FILE: 'dialog:saveFile',
@@ -16,6 +26,7 @@ export const IPC = {
 
   // Shell
   SHELL_OPEN_PATH: 'shell:openPath',
+  SHELL_OPEN_EXTERNAL: 'shell:openExternal',
 
   // Window control
   WINDOW_MINIMIZE: 'window:minimize',

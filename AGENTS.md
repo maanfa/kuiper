@@ -87,11 +87,21 @@
   - `TerrainPackForm.vue` / `TerrainUnpackForm.vue` — 地形切片打包/解包
   - `TilesetPackForm.vue` / `TilesetUnpackForm.vue` — 3DTiles 打包/解包
 - 工具类组件以功能描述命名：`FileInspectPanel.vue`、`FileTabsPanel.vue`、`LogOutput.vue`
+- 配置面板组件遵循 `<业务>ConfigPanel` 模式：`ServerConfigPanel.vue`
+- 对话框组件以 `Dialog` 后缀：`ClosePromptDialog.vue`、`ServerCloseDialog.vue`
 
 ## 前端工具函数
 
 - `utils/file-inspector.ts` — 通用 SQLite 文件查看函数（openDbFile / queryDbTable / queryDbRow / fetchSummary / formatSize）
 - `utils/tile-helper.ts` — 瓦片专用操作函数（queryTileInfo / saveTile / saveTileByUri）
+
+## 主进程服务器模式
+
+- 用 Hono 框架实现本地 HTTP 服务，挂载在 Electron 主进程
+- 服务器类（`StaticServer`）仅管理生命周期和路由，HTML 模板抽取到 `html-templates.ts`
+- SQLite 连接通过 `SqlitePool`（LRU 淘汰）管理，避免逐次开关
+- 服务启停通过 IPC 通道（`server:start` / `server:stop` / `server:update-files` 等）控制
+- 退出守卫：服务运行中关闭窗口时，主进程发 IPC 到渲染进程弹出 NaiveUI 确认弹窗，避免用系统原生对话框
 
 ## VerticalSplit 组件规范
 
@@ -102,6 +112,7 @@
 - 分隔条容器（`.vertical-split`）设 `overflow: hidden` 防整体溢出
 - 左侧面板 `flex-shrink: 0`，右侧面板 `flex: 1; min-width: 0`
 - 拖拽逻辑扣除分隔条占宽（4 + 8×2 = 20px）后计算比例，左右最小宽度通过 `minLeftWidth` / `minRightWidth` props 控制（默认各 200px）
+- 可选 `storageKey` prop，传入后自动将分隔位置持久化到 `localStorage`，刷新恢复
 
 ## Plan 输出规范
 
@@ -113,3 +124,10 @@
 ## 沟通语言
 
 - 所有文档、注释、交互均使用中文
+
+## 用户文档
+
+- `docs/` 目录存放面向最终用户的功能指引，以 Markdown 形式编写
+- `skills/` 目录存放面向 AI 开发者的技术参考（schema、格式规范等）
+- 本期功能指引：
+  - `docs/static-server.md` — 静态托管服务使用指南（配置、API 端点、Cesium 集成、连接池说明）
