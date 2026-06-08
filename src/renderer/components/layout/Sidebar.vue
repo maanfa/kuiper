@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { NScrollbar } from 'naive-ui'
 import type { FunctionItem } from '../../stores/sidebar'
+import { getToolGroups } from '../../../shared/tool-registry'
 import FunctionCard from '../sidebar/FunctionCard.vue'
 import FunctionIcon from '../sidebar/FunctionIcon.vue'
 import kuiperRingIcon from '../../assets/KuiperRing.webp'
 
-defineProps<{
+const props = defineProps<{
   activeRoute: string
   collapsed: boolean
   functionItems: FunctionItem[]
@@ -15,6 +17,8 @@ defineProps<{
 defineEmits<{
   navigate: [route: string]
 }>()
+
+const toolGroups = computed(() => getToolGroups(props.functionItems))
 </script>
 
 <template>
@@ -31,25 +35,40 @@ defineEmits<{
     <NScrollbar class="sidebar-scroll">
       <div class="sidebar-items">
         <template v-if="!collapsed">
-          <FunctionCard
-            v-for="item in functionItems"
-            :key="item.id"
-            :icon="item.icon"
-            :title="item.title"
-            :description="item.description"
-            :active="activeRoute === item.route"
-            @click="$emit('navigate', item.route)"
-          />
+          <template v-for="(group, gi) in toolGroups" :key="group.key">
+            <div class="sidebar-category-label" :class="{ first: gi === 0 }">
+              {{ group.label }}
+            </div>
+            <FunctionCard
+              v-for="item in group.items"
+              :key="item.id"
+              :icon="item.icon"
+              :title="item.title"
+              :description="item.description"
+              :active="activeRoute === item.route"
+              @click="$emit('navigate', item.route)"
+            />
+            <div
+              v-if="gi < toolGroups.length - 1"
+              class="sidebar-separator"
+            />
+          </template>
         </template>
         <template v-else>
-          <FunctionIcon
-            v-for="item in functionItems"
-            :key="item.id"
-            :icon="item.icon"
-            :title="item.title"
-            :active="activeRoute === item.route"
-            @click="$emit('navigate', item.route)"
-          />
+          <template v-for="(group, gi) in toolGroups" :key="group.key">
+            <FunctionIcon
+              v-for="item in group.items"
+              :key="item.id"
+              :icon="item.icon"
+              :title="item.title"
+              :active="activeRoute === item.route"
+              @click="$emit('navigate', item.route)"
+            />
+            <div
+              v-if="gi < toolGroups.length - 1"
+              class="sidebar-separator collapsed-separator"
+            />
+          </template>
         </template>
       </div>
     </NScrollbar>
@@ -119,5 +138,27 @@ defineEmits<{
 
 .sidebar-items {
   padding: 8px;
+}
+
+.sidebar-category-label {
+  font-size: 11px;
+  color: #999;
+  padding: 8px 12px 4px;
+  font-weight: 500;
+}
+
+.sidebar-category-label.first {
+  padding-top: 0;
+}
+
+.sidebar-separator {
+  height: 1px;
+  background: #e8e8e8;
+  margin: 6px 16px;
+}
+
+.sidebar-separator.collapsed-separator {
+  width: 32px;
+  margin: 8px auto;
 }
 </style>

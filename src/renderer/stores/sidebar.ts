@@ -2,51 +2,28 @@ import { defineStore } from 'pinia'
 import { markRaw, ref } from 'vue'
 import { GlobeOutline, SwapHorizontalOutline, EyeOutline, CubeOutline } from '@vicons/ionicons5'
 import type { Component } from 'vue'
+import { ALL_TOOLS, type ToolDefinition } from '../../shared/tool-registry'
 
-/** 功能项数据结构 */
-export interface FunctionItem {
-  id: string
-  title: string
-  description: string
-  route: string
+/** 功能项数据结构（扩展自 ToolDefinition，附加 UI 专属 icon） */
+export interface FunctionItem extends ToolDefinition {
   icon: Component
 }
 
-/** 侧边栏功能项列表 */
-const DEFAULT_ITEMS: FunctionItem[] = [
-  {
-    id: 'terrain-tile',
-    title: '地形切片生成器',
-    description:
-      '支持全球高程数据的多级切片处理，可高效生成 TMS/WMTS 标准瓦片，适用于 Cesium、Mapbox 等三维地球引擎的地形渲染场景。',
-    route: '/terrain-tile',
-    icon: markRaw(GlobeOutline),
-  },
-  {
-    id: 'terrain-tile-converter',
-    title: '地形切片转换器',
-    description:
-      'Cesium Quantized TerrainMesh 切片打包与解包工具，支持将瓦片目录打包为单个 SQLite 文件，或从 SQLite 文件还原瓦片目录。',
-    route: '/terrain-tile-converter',
-    icon: markRaw(SwapHorizontalOutline),
-  },
-  {
-    id: 'tileset-converter',
-    title: '3DTiles 转换器',
-    description:
-      '将 3DTiles 数据集（tileset.json + 瓦片文件）打包为单个 .czts SQLite 文件，或从 .czts 文件还原 3DTiles 数据集。',
-    route: '/tileset-converter',
-    icon: markRaw(CubeOutline),
-  },
-  {
-    id: 'inspector',
-    title: '文件查看器',
-    description:
-      '打开并浏览 .cztr / .czts 文件，查看内部表数据、瓦片详情与 JSON 内容。',
-    route: '/inspector',
-    icon: markRaw(EyeOutline),
-  },
-]
+/** 工具 ID → 图标映射（UI 专属，不放入纯数据层） */
+const ICON_MAP: Record<string, Component> = {
+  'terrain-tile': markRaw(GlobeOutline),
+  'terrain-tile-converter': markRaw(SwapHorizontalOutline),
+  'tileset-converter': markRaw(CubeOutline),
+  'inspector': markRaw(EyeOutline),
+}
+
+/** 从工具注册表 + 图标映射构建功能项列表 */
+function buildFunctionItems(): FunctionItem[] {
+  return ALL_TOOLS.map(tool => ({
+    ...tool,
+    icon: ICON_MAP[tool.id] ?? markRaw(GlobeOutline),
+  }))
+}
 
 export const useSidebarStore = defineStore('sidebar', () => {
   /** 配置是否已加载（防止渲染闪烁） */
@@ -54,7 +31,7 @@ export const useSidebarStore = defineStore('sidebar', () => {
   /** 侧边栏是否收缩 */
   const collapsed = ref(false)
   /** 功能项列表 */
-  const functionItems: FunctionItem[] = [...DEFAULT_ITEMS]
+  const functionItems: FunctionItem[] = buildFunctionItems()
 
   /** 切换侧边栏展开/收缩 */
   function toggleCollapsed(): void {
