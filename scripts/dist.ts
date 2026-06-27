@@ -27,13 +27,21 @@ if (process.platform === 'win32') {
   process.env.PATH = `${binDir};${process.env.PATH}`
 }
 
-execSync('electron-builder --win', { stdio: 'inherit' })
+const root = resolve(import.meta.dirname!, '..')
+
+// 仅生成解包目录（不生成安装包），以便在签名/打包前嵌入图标
+execSync('electron-builder --win --dir', { stdio: 'inherit' })
 
 // 嵌入 exe 图标（electron-builder 的 winCodeSign 提取在 Windows 普通权限下会失败）
 execSync('tsx scripts/set-exe-icon.ts', { stdio: 'inherit' })
 
+// 从已嵌入图标的解包目录生成 NSIS 安装包
+execSync(
+  `electron-builder --win --prepackaged "${resolve(root, 'release', 'win-unpacked')}"`,
+  { stdio: 'inherit' },
+)
+
 // 将解包目录打包为 7z 便携版
-const root = resolve(import.meta.dirname!, '..')
 const pkg = require(resolve(root, 'package.json'))
 const version = pkg.version
 const source = resolve(root, 'release', 'win-unpacked')
