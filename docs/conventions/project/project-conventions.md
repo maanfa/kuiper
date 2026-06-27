@@ -1,5 +1,7 @@
 # 项目约定
 
+## 工程规范
+
 - 程序名为英文 `kuiper-box`，窗口标题为中文「柯伊伯方盒」
 - GitHub 仓库：https://github.com/maanfa/kuiper
 - 使用国内 npm 镜像加速依赖下载
@@ -14,3 +16,12 @@
 - Electron 二进制可能因 pnpm 构建脚本策略未自动下载，需在 `pnpm.onlyBuiltDependencies` 中明确列出 `electron`，或手动执行 `node node_modules/electron/install.js`
 - 所有文件使用 LF 换行符
 - VSCode 设置显式指定 TypeScript SDK 路径为 `node_modules/typescript/lib`
+
+## 文档约定
+
+- 每项新增功能需同步提供对应的文档：
+  - **功能文档** — 面向用户的使用指南，位于 `docs/`（如 `static-server.md`）
+  - **架构文档** — 面向开发者的设计说明，位于 `skills/`（如 schema 规范、格式说明）
+- 功能文档至少应包含：功能概述、配置参数说明、使用步骤、API 端点或输入输出格式
+- README 功能列表需同步更新，与已实现功能保持一致
+- `AGENTS.md` / `docs/conventions/` 中的约定文档应随项目演化持续维护
