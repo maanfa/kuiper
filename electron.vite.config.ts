@@ -49,7 +49,9 @@ export default defineConfig({
         },
         output: {
           format: 'cjs',
-          entryFileNames: '[name].js',
+          entryFileNames: (chunkInfo) => {
+            return chunkInfo.name === 'task/tile-worker' ? 'task/tile-worker.cjs' : '[name].js'
+          },
           chunkFileNames: 'chunks/[name].js',
         },
         external: ['electron', 'electron-builder'],

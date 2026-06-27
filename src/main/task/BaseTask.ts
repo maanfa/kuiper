@@ -19,7 +19,7 @@ export abstract class BaseTask extends EventEmitter {
     this.type = config.type
     this.status = 'pending'
     this.progress = { current: 0, total: 0 }
-    this.pool = new FileWorkerPool(config.workerCount ?? 3, join(workerScriptDir, 'task/tile-worker.js'))
+    this.pool = new FileWorkerPool(config.workerCount ?? 3, join(workerScriptDir, 'task/tile-worker.cjs'))
   }
 
   abstract run(): Promise<TaskResult>

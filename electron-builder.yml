@@ -14,8 +14,8 @@ win:
 extraResources:
   - from: resources/icon.png
     to: icon.png
-  - from: out/main/task/tile-worker.js
-    to: task/tile-worker.js
+  - from: out/main/task/tile-worker.cjs
+    to: task/tile-worker.cjs
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
