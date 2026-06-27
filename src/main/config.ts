@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { app, screen } from 'electron'
 import { parse, stringify } from 'yaml'
-import type { ServerConfig } from '../shared/server-types'
+import type { ServerConfig, StaticFileServerConfig } from '../shared/server-types'
 
 /** 窗口尺寸配置（位置由启动时自动居中计算） */
 export interface WindowBounds {
@@ -24,6 +24,15 @@ export interface TaskConfig {
   workerCount: number
 }
 
+/** 地形切片生成器配置 */
+export interface TerrainGeneratorConfig {
+  jdkPath: string
+  jarPath: string
+  jdkBuiltIn: boolean
+  jarBuiltIn: boolean
+  javaOpts?: string
+}
+
 /** 应用完整配置 */
 export interface AppConfig {
   windowBounds: WindowBounds
@@ -34,6 +43,8 @@ export interface AppConfig {
   logging: LoggingConfig
   task: TaskConfig
   server?: ServerConfig
+  staticFileServer?: StaticFileServerConfig
+  terrainGenerator?: TerrainGeneratorConfig
   env?: Record<string, string>
 }
 
@@ -59,6 +70,8 @@ const DEFAULT_CONFIG: AppConfig = {
   logging: { level: 'info' },
   task: { workerCount: 3 },
   server: { port: 9356, prefix: '/files', maxConnections: 10, files: [] },
+  staticFileServer: { port: 9357, prefix: '/', rootDir: '', showDirectoryListing: true },
+  terrainGenerator: { jdkPath: '', jarPath: '', jdkBuiltIn: false, jarBuiltIn: false },
   env: {},
 }
 

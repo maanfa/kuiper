@@ -57,6 +57,14 @@ export const ALL_TOOLS: ToolDefinition[] = [
     route: '/static-server',
     category: 'static-server',
   },
+  {
+    id: 'static-file-server',
+    title: '静态文件服务',
+    description:
+      '启动本地静态文件服务，将指定目录下的文件通过 HTTP 对外提供，支持目录浏览，类似 nginx 的静态文件托管。',
+    route: '/static-file-server',
+    category: 'static-server',
+  },
 ]
 
 export interface ToolGroup {

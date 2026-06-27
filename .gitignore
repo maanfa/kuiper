@@ -6,3 +6,7 @@ release
 *.log
 *.tsbuildinfo
 app.config.yml
+
+# 地形切片生成器外部依赖（用户自行下载/管理）
+resources/mago-3d-terrainer-*.jar
+resources/microsoft-jdk-*

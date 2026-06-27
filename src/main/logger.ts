@@ -174,3 +174,16 @@ export class Logger {
     this.stream = null
   }
 }
+
+/** 全局 Logger 单例，供非 main/index.ts 模块访问 */
+let globalInstance: Logger | null = null
+
+/** 设置全局 Logger 实例 */
+export function setGlobalLogger(logger: Logger): void {
+  globalInstance = logger
+}
+
+/** 获取全局 Logger 实例 */
+export function getGlobalLogger(): Logger | null {
+  return globalInstance
+}

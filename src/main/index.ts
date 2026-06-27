@@ -1,7 +1,7 @@
 import { app, BrowserWindow, Tray, nativeImage, Menu, ipcMain, dialog, shell } from 'electron'
 import { join, dirname } from 'node:path'
 import { spawnSync } from 'node:child_process'
-import { writeFileSync } from 'node:fs'
+import { writeFileSync, existsSync } from 'node:fs'
 import {
   loadAppConfig,
   saveAppConfig,
@@ -9,12 +9,15 @@ import {
   getConfigPath,
 } from './config'
 import type { AppConfig, CloseBehavior } from './config'
-import { Logger } from './logger'
+import { Logger, setGlobalLogger } from './logger'
 import { TaskManager } from './task/TaskManager'
 import { IPC } from '../shared/ipc-channels'
-import type { ServerConfig, ServerFileEntry, ServerLogEntry } from '../shared/server-types'
+import type { ServerConfig, ServerFileEntry, ServerLogEntry, StaticFileServerConfig } from '../shared/server-types'
 import { openCztr, queryCztr, queryCztrRow, queryCztrTile, saveCztrTile, saveTileByUri, getCztrSummary } from './cztr-inspector'
 import { StaticServer } from './server/StaticServer'
+import { StaticFileServer } from './server/StaticFileServer'
+import { downloadJdk, downloadJar } from './terrain-gen/download'
+import { checkJavaVersion, findJavaExe, findSystemJava } from './terrain-gen/java-check'
 
 // 修复 Windows 控制台编码，确保中文日志正常显示
 if (process.platform === 'win32') {
@@ -31,6 +34,8 @@ let logger: Logger | null = null
 let forceQuit = false
 /** 静态文件服务器实例 */
 let staticServer: StaticServer | null = null
+/** 静态文件服务实例 */
+let staticFileServer: StaticFileServer | null = null
 
 /**
  * 获取应用图标文件的绝对路径
@@ -42,6 +47,13 @@ function getIconPath(): string {
   return app.isPackaged
     ? join(dirname(app.getPath('exe')), 'resources', 'icon.png')
     : join(app.getAppPath(), 'resources', 'icon.png')
+}
+
+/** 获取 resources 目录绝对路径（外部资源目录） */
+function getResourcesDir(): string {
+  return app.isPackaged
+    ? join(dirname(app.getPath('exe')), 'resources')
+    : join(app.getAppPath(), 'resources')
 }
 
 /**
@@ -162,6 +174,13 @@ function createWindow(cfg: AppConfig): void {
       return
     }
 
+    // 若静态文件服务正在运行，二次确认
+    if (staticFileServer?.getStatus() === 'running') {
+      e.preventDefault()
+      win.webContents.send(IPC.STATIC_FILE_SERVER_CLOSE_PROMPT)
+      return
+    }
+
     const curCfg = loadAppConfig()
     // 仅保存上次正常窗口的宽高，位置由启动时自动居中计算
     const currentBounds = win.getBounds()
@@ -244,6 +263,25 @@ function saveServerConfig(config: ServerConfig): void {
   saveAppConfig(cfg)
 }
 
+/** 保存静态文件服务配置到 app.config.yml */
+function saveStaticFileServerConfig(config: StaticFileServerConfig): void {
+  const cfg = loadAppConfig()
+  cfg.staticFileServer = config
+  saveAppConfig(cfg)
+}
+
+function getTaskLabel(type: string, taskId: string): string {
+  const short = taskId.slice(0, 8)
+  const map: Record<string, string> = {
+    'pack': `地形打包 [${short}]`,
+    'unpack': `地形解包 [${short}]`,
+    'tileset-pack': `3DTiles打包 [${short}]`,
+    'tileset-unpack': `3DTiles解包 [${short}]`,
+    'terrain-gen': `地形生成 [${short}]`,
+  }
+  return map[type] || `${type} [${short}]`
+}
+
 /** 注册 IPC 处理器，供渲染进程读写配置 */
 function registerIpcHandlers(): void {
   const taskManager = TaskManager.getInstance()
@@ -306,6 +344,14 @@ function registerIpcHandlers(): void {
     return taskManager.cancel(taskId)
   })
 
+  ipcMain.handle(IPC.TASK_LIST, () => {
+    return taskManager.getTasks().map((t) => ({
+      taskId: t.id,
+      type: t.type,
+      label: getTaskLabel(t.type, t.id),
+    }))
+  })
+
   // Server API
   ipcMain.handle(IPC.SERVER_START, async (_event, config: ServerConfig) => {
     try {
@@ -352,6 +398,52 @@ function registerIpcHandlers(): void {
   ipcMain.handle(IPC.SERVER_POOL_STATUS, () => {
     return staticServer?.getPoolStatus() ?? null
   })
+
+  // Static File Server API
+  ipcMain.handle(IPC.STATIC_FILE_SERVER_START, async (_event, config: StaticFileServerConfig) => {
+    try {
+      if (!staticFileServer) {
+        staticFileServer = new StaticFileServer()
+      }
+      await staticFileServer.start(config, (entry: ServerLogEntry) => {
+        win?.webContents.send(IPC.STATIC_FILE_SERVER_LOG, entry)
+      })
+      saveStaticFileServerConfig(config)
+      logger?.info(`静态文件服务已启动，端口 ${config.port}，根目录 ${config.rootDir}`)
+      return { success: true }
+    } catch (err) {
+      logger?.error('启动静态文件服务失败:', (err as Error).message)
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle(IPC.STATIC_FILE_SERVER_STOP, async () => {
+    try {
+      staticFileServer?.stop()
+      staticFileServer = null
+      logger?.info('静态文件服务已停止')
+      return { success: true }
+    } catch (err) {
+      logger?.error('停止静态文件服务失败:', (err as Error).message)
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle(IPC.STATIC_FILE_SERVER_STATUS, () => {
+    return staticFileServer?.getStatus() ?? 'stopped'
+  })
+
+  ipcMain.on(
+    IPC.STATIC_FILE_SERVER_CLOSE_RESULT,
+    (_event, confirmed: boolean) => {
+      if (confirmed) {
+        staticFileServer?.stop()
+        staticFileServer = null
+        forceQuit = true
+        app.quit()
+      }
+    },
+  )
 
   // Dialog API
   ipcMain.handle(IPC.DIALOG_OPEN_DIR, async () => {
@@ -448,6 +540,137 @@ function registerIpcHandlers(): void {
     return getCztrSummary(filePath)
   })
 
+  // Terrain Generator API
+
+  ipcMain.handle(IPC.TERRAIN_GEN_CHECK_JAVA, async () => {
+    const cfg = loadAppConfig()
+    const tg = cfg.terrainGenerator
+
+    const configJdk = tg?.jdkPath || ''
+    const configJar = tg?.jarPath || ''
+
+    let jdkReady = false
+    let jarReady = false
+    let jdkError = ''
+    let jarError = ''
+    let javaVersion = ''
+    let resolvedJdk = configJdk
+    let resolvedJar = configJar
+
+    // 检查配置中的 JDK
+    if (configJdk) {
+      const result = await checkJavaVersion(configJdk)
+      jdkReady = result.valid
+      javaVersion = result.version || ''
+      if (!result.valid) {
+        jdkError = result.error || 'JDK 不可用'
+      }
+    }
+
+    // 检查配置中的 Jar
+    if (configJar) {
+      if (existsSync(configJar)) {
+        jarReady = true
+      } else {
+        jarError = `文件不存在: ${configJar}`
+      }
+    }
+
+    // 若未配置 JDK，尝试扫描 resources 目录
+    if (!jdkReady) {
+      const resourcesDir = getResourcesDir()
+      const found = findJavaExe(resourcesDir)
+      if (found) {
+        const result = await checkJavaVersion(found)
+        if (result.valid) {
+          jdkReady = true
+          resolvedJdk = found
+          javaVersion = result.version || ''
+          const freshCfg = loadAppConfig()
+          freshCfg.terrainGenerator = {
+            ...(freshCfg.terrainGenerator || { jdkPath: '', jarPath: '', jdkBuiltIn: false, jarBuiltIn: false }),
+            jdkPath: found,
+            jdkBuiltIn: false,
+          }
+          saveAppConfig(freshCfg)
+        }
+      }
+
+      // 再尝试系统 PATH
+      if (!jdkReady) {
+        const sysJava = findSystemJava()
+        if (sysJava) {
+          const result = await checkJavaVersion(sysJava)
+          if (result.valid) {
+            jdkReady = true
+            resolvedJdk = sysJava
+            javaVersion = result.version || ''
+          }
+        }
+      }
+    }
+
+    // 若未配置 Jar，尝试扫描 resources 目录
+    if (!jarReady) {
+      const resourcesDir = getResourcesDir()
+      const magoJarPath = join(resourcesDir, 'mago-3d-terrainer-1.13.0-release.jar')
+      if (existsSync(magoJarPath)) {
+        jarReady = true
+        resolvedJar = magoJarPath
+        const freshCfg = loadAppConfig()
+        freshCfg.terrainGenerator = {
+          ...(freshCfg.terrainGenerator || { jdkPath: '', jarPath: '', jdkBuiltIn: false, jarBuiltIn: false }),
+          jarPath: magoJarPath,
+          jarBuiltIn: false,
+        }
+        saveAppConfig(freshCfg)
+      }
+    }
+
+    return { jdkReady, jarReady, jdkError, jarError, javaVersion, jdkPath: resolvedJdk, jarPath: resolvedJar }
+  })
+
+  ipcMain.handle(IPC.TERRAIN_GEN_DOWNLOAD_JDK, async () => {
+    const resourcesDir = getResourcesDir()
+    const onProgress = (received: number, total: number) => {
+      win?.webContents.send(IPC.TERRAIN_GEN_DOWNLOAD_PROGRESS, { received, total, type: 'jdk' })
+    }
+    onProgress(0, 1)
+    const result = await downloadJdk(resourcesDir, onProgress)
+    if (result.success && result.path) {
+      // 写入配置
+      const cfg = loadAppConfig()
+      cfg.terrainGenerator = {
+        ...(cfg.terrainGenerator || { jdkPath: '', jarPath: '', jdkBuiltIn: false, jarBuiltIn: false }),
+        jdkPath: result.path,
+        jdkBuiltIn: true,
+      }
+      saveAppConfig(cfg)
+    }
+    win?.webContents.send(IPC.TERRAIN_GEN_DOWNLOAD_COMPLETE, { success: result.success, type: 'jdk', error: result.error })
+    return result
+  })
+
+  ipcMain.handle(IPC.TERRAIN_GEN_DOWNLOAD_JAR, async () => {
+    const resourcesDir = getResourcesDir()
+    const onProgress = (received: number, total: number) => {
+      win?.webContents.send(IPC.TERRAIN_GEN_DOWNLOAD_PROGRESS, { received, total, type: 'jar' })
+    }
+    onProgress(0, 1)
+    const result = await downloadJar(resourcesDir, onProgress)
+    if (result.success && result.path) {
+      const cfg = loadAppConfig()
+      cfg.terrainGenerator = {
+        ...(cfg.terrainGenerator || { jdkPath: '', jarPath: '', jdkBuiltIn: false, jarBuiltIn: false }),
+        jarPath: result.path,
+        jarBuiltIn: true,
+      }
+      saveAppConfig(cfg)
+    }
+    win?.webContents.send(IPC.TERRAIN_GEN_DOWNLOAD_COMPLETE, { success: result.success, type: 'jar', error: result.error })
+    return result
+  })
+
   ipcMain.handle('app:isPackaged', () => app.isPackaged)
 }
 
@@ -466,6 +689,7 @@ app.whenReady().then(() => {
   }
 
   logger = new Logger(cfg.logging, getLogDir(cfg))
+  setGlobalLogger(logger)
   logger.info('kuiper-box 启动')
 
   registerIpcHandlers()
@@ -484,5 +708,7 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   staticServer?.stop()
   staticServer = null
+  staticFileServer?.stop()
+  staticFileServer = null
   forceQuit = true
 })

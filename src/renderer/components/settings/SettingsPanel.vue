@@ -14,7 +14,7 @@ import {
   NText,
   NTooltip,
 } from 'naive-ui'
-import { RefreshOutline, SaveOutline } from '@vicons/ionicons5'
+import { RefreshOutline, SaveOutline, DocumentOutline } from '@vicons/ionicons5'
 import EnvVarForm from '../form/EnvVarForm.vue'
 import { useSettingsStore } from '../../stores/settings'
 
@@ -30,6 +30,20 @@ const store = useSettingsStore()
 onMounted(() => {
   store.loadConfig()
 })
+
+async function browseJdk(): Promise<void> {
+  const path = await window.electronAPI.openFile([{ name: '可执行文件', extensions: ['exe', 'com'] }])
+  if (path) {
+    store.form.terrainGen.jdkPath = path
+  }
+}
+
+async function browseJar(): Promise<void> {
+  const path = await window.electronAPI.openFile([{ name: 'Jar 文件', extensions: ['jar'] }])
+  if (path) {
+    store.form.terrainGen.jarPath = path
+  }
+}
 </script>
 
 <template>
@@ -117,6 +131,61 @@ onMounted(() => {
 
         <NCard title="环境变量" size="small" class="section">
           <EnvVarForm v-model="store.form.env" />
+        </NCard>
+
+        <NCard title="地形切片生成器" size="small" class="section">
+          <NSpace vertical size="medium">
+            <div class="form-field">
+              <NText depth="3" class="field-label">JDK 路径（java.exe）</NText>
+              <div class="path-row">
+                <NInput
+                  v-model:value="store.form.terrainGen.jdkPath"
+                  placeholder="留空则自动检测 resources 目录或系统 PATH"
+                  class="path-input"
+                />
+                <NTooltip placement="top">
+                  <template #trigger>
+                    <NButton size="small" quaternary @click="browseJdk">
+                      <template #icon>
+                        <NIcon size="16"><DocumentOutline /></NIcon>
+                      </template>
+                    </NButton>
+                  </template>
+                  浏览选择 java.exe
+                </NTooltip>
+              </div>
+            </div>
+            <div class="form-field">
+              <NText depth="3" class="field-label">Jar 包路径</NText>
+              <div class="path-row">
+                <NInput
+                  v-model:value="store.form.terrainGen.jarPath"
+                  placeholder="mago-3d-terrainer-1.13.0-release.jar 的完整路径"
+                  class="path-input"
+                />
+                <NTooltip placement="top">
+                  <template #trigger>
+                    <NButton size="small" quaternary @click="browseJar">
+                      <template #icon>
+                        <NIcon size="16"><DocumentOutline /></NIcon>
+                      </template>
+                    </NButton>
+                  </template>
+                  浏览选择 jar 文件
+                </NTooltip>
+              </div>
+            </div>
+            <div class="form-field">
+              <NText depth="3" class="field-label">Java 启动选项（可选）</NText>
+              <NInput
+                v-model:value="store.form.terrainGen.javaOpts"
+                placeholder="-Xmx4g"
+              />
+            </div>
+            <NText depth="3" style="font-size: 11px">
+              若未配置，进入地形切片生成器页面时会自动扫描 resources 目录和系统 PATH 中的 JDK 21。
+            </NText>
+          </NSpace>
         </NCard>
 
         <NCard title="版本信息" size="small" class="section">
@@ -243,5 +312,15 @@ onMounted(() => {
 
 .field-label {
   font-size: 12px;
+}
+
+.path-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.path-input {
+  flex: 1;
 }
 </style>

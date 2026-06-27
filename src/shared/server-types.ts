@@ -50,3 +50,16 @@ export interface ServerFileMetadata {
   tilesetCount?: number
   sourceDirectory?: string
 }
+
+export interface StaticFileServerConfig {
+  port: number
+  prefix: string
+  rootDir: string
+  showDirectoryListing: boolean
+}
+
+export interface RunningTaskInfo {
+  taskId: string
+  type: string
+  label: string
+}

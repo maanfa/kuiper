@@ -9,6 +9,8 @@ export const useUiStore = defineStore('ui', () => {
   const statusText = ref('')
   /** 状态栏闪烁消息（彩色标签） */
   const flashText = ref('')
+  /** 任务中心浮动面板可见性 */
+  const showTaskCenterFloat = ref(false)
 
   function toggleSettings(): void {
     showSettings.value = !showSettings.value
@@ -37,5 +39,9 @@ export const useUiStore = defineStore('ui', () => {
     }, duration)
   }
 
-  return { showSettings, statusText, flashText, toggleSettings, closeSettings, setStatusText, clearStatusText, flashStatusText }
+  function toggleTaskCenterFloat(): void {
+    showTaskCenterFloat.value = !showTaskCenterFloat.value
+  }
+
+  return { showSettings, showTaskCenterFloat, statusText, flashText, toggleSettings, closeSettings, setStatusText, clearStatusText, flashStatusText, toggleTaskCenterFloat }
 })

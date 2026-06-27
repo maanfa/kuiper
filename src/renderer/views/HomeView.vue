@@ -10,6 +10,7 @@ import StatusBar from '../components/layout/StatusBar.vue'
 import SettingsPanel from '../components/settings/SettingsPanel.vue'
 import ClosePromptDialog from '../components/dialog/ClosePromptDialog.vue'
 import ServerCloseDialog from '../components/dialog/ServerCloseDialog.vue'
+import TaskCenterFloatingPanel from '../components/task/TaskCenterFloatingPanel.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -134,9 +135,15 @@ function handleServerCloseCancel(): void {
           @confirm="handleServerCloseConfirm"
           @close="handleServerCloseCancel"
         />
+        <TaskCenterFloatingPanel v-if="uiStore.showTaskCenterFloat" />
       </main>
     </div>
-    <StatusBar :status-text="uiStore.statusText" :flash-text="uiStore.flashText" />
+    <StatusBar
+      :status-text="uiStore.statusText"
+      :flash-text="uiStore.flashText"
+      :float-panel-visible="uiStore.showTaskCenterFloat"
+      @toggle-float="uiStore.toggleTaskCenterFloat()"
+    />
   </div>
 </template>
 

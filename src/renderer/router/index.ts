@@ -39,6 +39,16 @@ const router = createRouter({
           name: 'staticServer',
           component: () => import('../views/StaticServerView.vue'),
         },
+        {
+          path: 'static-file-server',
+          name: 'staticFileServer',
+          component: () => import('../views/StaticFileServerView.vue'),
+        },
+        {
+          path: 'task-center',
+          name: 'taskCenter',
+          component: () => import('../views/TaskCenterView.vue'),
+        },
       ],
     },
   ],

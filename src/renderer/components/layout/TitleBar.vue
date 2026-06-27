@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { NButton, NIcon, NTooltip } from 'naive-ui'
-import { SettingsOutline } from '@vicons/ionicons5'
+import { NButton, NIcon, NTooltip, NBadge } from 'naive-ui'
+import { SettingsOutline, AppsOutline } from '@vicons/ionicons5'
+import { useRouter } from 'vue-router'
 
 defineProps<{
   showSettings?: boolean
@@ -11,14 +12,26 @@ const emit = defineEmits<{
   'toggle-settings': []
 }>()
 
+const router = useRouter()
 const api = window.electronAPI
 
 const isPackaged = ref(true)
 const isMaximized = ref(false)
+const taskCount = ref(0)
 
 const appTitle = computed(() => isPackaged.value ? '柯伊伯方盒' : '柯伊伯方盒 - [DevMode]')
 
 let cleanupMaximize: (() => void) | null = null
+let taskListTimer: ReturnType<typeof setInterval> | null = null
+
+async function refreshTaskCount() {
+  try {
+    const tasks = await api.taskList()
+    taskCount.value = tasks.length
+  } catch {
+    // ignore
+  }
+}
 
 onMounted(async () => {
   try {
@@ -36,10 +49,17 @@ onMounted(async () => {
   cleanupMaximize = api.onMaximizeChanged((maximized) => {
     isMaximized.value = maximized
   })
+
+  refreshTaskCount()
+  taskListTimer = setInterval(refreshTaskCount, 3000)
 })
 
 onUnmounted(() => {
   cleanupMaximize?.()
+  if (taskListTimer) {
+    clearInterval(taskListTimer)
+    taskListTimer = null
+  }
 })
 
 function handleMinimize() {
@@ -53,6 +73,10 @@ function handleMaximize() {
 function handleClose() {
   api.closeWindow()
 }
+
+function openTaskCenter() {
+  router.push('/task-center')
+}
 </script>
 
 <template>
@@ -61,6 +85,25 @@ function handleClose() {
       <span class="title-bar-text">{{ appTitle }}</span>
     </div>
     <div class="title-bar-right">
+      <NTooltip trigger="hover" placement="bottom">
+        <template #trigger>
+          <NButton
+            size="tiny"
+            quaternary
+            class="title-bar-settings-btn"
+            @click="openTaskCenter"
+          >
+            <template #icon>
+              <NBadge :value="taskCount" :max="99" :show="taskCount > 0">
+                <NIcon size="15">
+                  <AppsOutline />
+                </NIcon>
+              </NBadge>
+            </template>
+          </NButton>
+        </template>
+        任务中心
+      </NTooltip>
       <NTooltip trigger="hover" placement="bottom">
         <template #trigger>
           <NButton

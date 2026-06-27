@@ -1,6 +1,16 @@
 export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
 
-export type TaskType = 'pack' | 'unpack' | 'tileset-pack' | 'tileset-unpack'
+export type TaskType = 'pack' | 'unpack' | 'tileset-pack' | 'tileset-unpack' | 'terrain-gen'
+
+/** 任务追踪接口，用于 TaskManager 统一管理 */
+export interface TrackedTask {
+  id: string
+  status: TaskStatus
+  type: TaskType
+  cancel(): void
+  on(event: string, handler: (...args: unknown[]) => void): unknown
+  off(event: string, handler: (...args: unknown[]) => void): void
+}
 
 export interface TaskConfig {
   type: TaskType
@@ -17,6 +27,40 @@ export interface TaskConfig {
   // Tileset
   tilesetJsonPath?: string
   tilesetOutputFile?: string
+  // Terrain Gen
+  tifDir?: string
+  minZoom?: number
+  maxZoom?: number
+  jdkPath?: string
+  jarPath?: string
+  advanced?: TerrainGenAdvancedParams
+}
+
+/** 地形切片生成高级参数（对应 jar CLI 可选参数） */
+export interface TerrainGenAdvancedParams {
+  geoid?: string
+  intensity?: number
+  interpolationType?: 'nearest' | 'bilinear'
+  calculateNormals?: boolean
+  mosaicSize?: number
+  rasterMaxSize?: number
+  body?: 'earth' | 'moon'
+  debug?: boolean
+  leaveTemp?: boolean
+  continueFlag?: boolean
+  skipStandardizationResize?: boolean
+  extraArgs?: string
+}
+
+/** 地形切片生成参数 */
+export interface TerrainGenParams {
+  tifDir: string
+  outputDir: string
+  minZoom: number
+  maxZoom: number
+  jdkPath: string
+  jarPath: string
+  advanced?: TerrainGenAdvancedParams
 }
 
 export interface TaskResult {

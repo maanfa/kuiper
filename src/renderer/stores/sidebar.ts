@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { markRaw, ref } from 'vue'
-import { GlobeOutline, SwapHorizontalOutline, EyeOutline, CubeOutline, ServerOutline } from '@vicons/ionicons5'
+import { GlobeOutline, SwapHorizontalOutline, EyeOutline, CubeOutline, ServerOutline, FolderOpenOutline } from '@vicons/ionicons5'
 import type { Component } from 'vue'
 import { ALL_TOOLS, type ToolDefinition } from '../../shared/tool-registry'
 
@@ -16,6 +16,7 @@ const ICON_MAP: Record<string, Component> = {
   'tileset-converter': markRaw(CubeOutline),
   'inspector': markRaw(EyeOutline),
   'static-server': markRaw(ServerOutline),
+  'static-file-server': markRaw(FolderOpenOutline),
 }
 
 /** 从工具注册表 + 图标映射构建功能项列表 */

@@ -24,10 +24,12 @@ export const useSettingsStore = defineStore('settings', () => {
     logging: { level: LogLevel, filePath?: string }
     env: EnvEntry[]
     closeBehavior: CloseBehavior
+    terrainGen: { jdkPath: string, jarPath: string, javaOpts: string }
   }>({
     logging: { level: 'info' },
     env: [],
     closeBehavior: 'ask',
+    terrainGen: { jdkPath: '', jarPath: '', javaOpts: '' },
   })
 
   // 防抖定时器
@@ -60,6 +62,12 @@ export const useSettingsStore = defineStore('settings', () => {
     },
   )
 
+  // 地形生成器配置使用防抖
+  watch(
+    () => ({ jdkPath: form.terrainGen.jdkPath, jarPath: form.terrainGen.jarPath, javaOpts: form.terrainGen.javaOpts }),
+    () => { if (loaded.value) debouncedSave() },
+  )
+
   /** 从主进程加载配置 */
   async function loadConfig(): Promise<void> {
     if (!api) return
@@ -80,6 +88,12 @@ export const useSettingsStore = defineStore('settings', () => {
         }))
       } else {
         form.env = []
+      }
+
+      if (cfg.terrainGenerator) {
+        form.terrainGen.jdkPath = cfg.terrainGenerator.jdkPath || ''
+        form.terrainGen.jarPath = cfg.terrainGenerator.jarPath || ''
+        form.terrainGen.javaOpts = cfg.terrainGenerator.javaOpts || ''
       }
     } catch (err) {
       console.error('加载配置失败:', err)
@@ -115,6 +129,12 @@ export const useSettingsStore = defineStore('settings', () => {
           filePath: form.logging.filePath?.trim() || undefined,
         },
         env,
+        terrainGenerator: {
+          ...(cfg.terrainGenerator || { jdkPath: '', jarPath: '', jdkBuiltIn: false, jarBuiltIn: false }),
+          jdkPath: form.terrainGen.jdkPath.trim(),
+          jarPath: form.terrainGen.jarPath.trim(),
+          javaOpts: form.terrainGen.javaOpts.trim() || undefined,
+        },
       })
     } catch (err) {
       console.error('保存配置失败:', err)

@@ -7,6 +7,7 @@ export const IPC = {
   TASK_LOG: 'task:log',
   TASK_PROGRESS: 'task:progress',
   TASK_COMPLETE: 'task:complete',
+  TASK_LIST: 'task:list',
 
   // Static server
   SERVER_START: 'server:start',
@@ -17,6 +18,14 @@ export const IPC = {
   SERVER_POOL_STATUS: 'server:pool-status',
   SERVER_CLOSE_PROMPT: 'server:close-prompt',
   SERVER_CLOSE_RESULT: 'server:close-result',
+
+  // Static file server
+  STATIC_FILE_SERVER_START: 'static-file-server:start',
+  STATIC_FILE_SERVER_STOP: 'static-file-server:stop',
+  STATIC_FILE_SERVER_STATUS: 'static-file-server:status',
+  STATIC_FILE_SERVER_LOG: 'static-file-server:log',
+  STATIC_FILE_SERVER_CLOSE_PROMPT: 'static-file-server:close-prompt',
+  STATIC_FILE_SERVER_CLOSE_RESULT: 'static-file-server:close-result',
 
   // Dialog
   DIALOG_OPEN_DIR: 'dialog:openDirectory',
@@ -33,6 +42,13 @@ export const IPC = {
   WINDOW_MAXIMIZE: 'window:maximize',
   WINDOW_CLOSE: 'window:close',
   WINDOW_IS_MAXIMIZED: 'window:isMaximized',
+
+  // Terrain Generator
+  TERRAIN_GEN_DOWNLOAD_JDK: 'terrain-gen:download-jdk',
+  TERRAIN_GEN_DOWNLOAD_JAR: 'terrain-gen:download-jar',
+  TERRAIN_GEN_DOWNLOAD_PROGRESS: 'terrain-gen:download-progress',
+  TERRAIN_GEN_DOWNLOAD_COMPLETE: 'terrain-gen:download-complete',
+  TERRAIN_GEN_CHECK_JAVA: 'terrain-gen:check-java',
 
   // CZTR Inspector
   CZTR_OPEN: 'cztr:open',

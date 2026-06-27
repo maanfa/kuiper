@@ -1,13 +1,40 @@
 <script setup lang="ts">
+import { NButton, NIcon, NTooltip } from 'naive-ui'
+import { AppsOutline } from '@vicons/ionicons5'
+
 defineProps<{
   statusText?: string
   flashText?: string
+  floatPanelVisible?: boolean
+}>()
+
+defineEmits<{
+  'toggle-float': []
 }>()
 </script>
 
 <template>
   <footer class="status-bar">
     <span class="status-path">{{ statusText }}</span>
+    <span class="status-spacer" />
+    <NTooltip trigger="hover" placement="top">
+      <template #trigger>
+        <NButton
+          size="tiny"
+          quaternary
+          :type="floatPanelVisible ? 'primary' : 'default'"
+          class="status-bar-btn"
+          @click="$emit('toggle-float')"
+        >
+          <template #icon>
+            <NIcon size="14">
+              <AppsOutline />
+            </NIcon>
+          </template>
+        </NButton>
+      </template>
+      任务中心
+    </NTooltip>
     <span v-if="flashText" class="status-tag">{{ flashText }}</span>
   </footer>
 </template>
@@ -27,6 +54,16 @@ defineProps<{
 
 .status-path {
   color: #999;
+}
+
+.status-spacer {
+  flex: 1;
+}
+
+.status-bar-btn {
+  width: 28px;
+  height: 22px;
+  padding: 0;
 }
 
 .status-tag {

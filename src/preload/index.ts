@@ -32,6 +32,7 @@ try {
       ipcRenderer.on('task:complete', handler)
       return () => { ipcRenderer.removeListener('task:complete', handler) }
     },
+    taskList: () => ipcRenderer.invoke('task:list'),
     // Server API
     serverStart: (config: unknown) => ipcRenderer.invoke('server:start', config),
     serverStop: () => ipcRenderer.invoke('server:stop'),
@@ -50,6 +51,23 @@ try {
       const handler = (_event: unknown, entry: unknown) => cb(entry)
       ipcRenderer.on('server:log', handler)
       return () => { ipcRenderer.removeListener('server:log', handler) }
+    },
+    // Static File Server API
+    staticFileServerStart: (config: unknown) => ipcRenderer.invoke('static-file-server:start', config),
+    staticFileServerStop: () => ipcRenderer.invoke('static-file-server:stop'),
+    staticFileServerStatus: () => ipcRenderer.invoke('static-file-server:status'),
+    onStaticFileServerClosePrompt: (cb: () => void) => {
+      const handler = () => cb()
+      ipcRenderer.on('static-file-server:close-prompt', handler)
+      return () => { ipcRenderer.removeListener('static-file-server:close-prompt', handler) }
+    },
+    sendStaticFileServerCloseResult: (confirmed: boolean) => {
+      ipcRenderer.send('static-file-server:close-result', confirmed)
+    },
+    onStaticFileServerLog: (cb: (entry: unknown) => void) => {
+      const handler = (_event: unknown, entry: unknown) => cb(entry)
+      ipcRenderer.on('static-file-server:log', handler)
+      return () => { ipcRenderer.removeListener('static-file-server:log', handler) }
     },
     // Dialog API
     openDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
@@ -83,6 +101,20 @@ try {
     cztrSaveTileByUri: (filePath: string, uri: string, destPath: string) =>
       ipcRenderer.invoke('cztr:save-tile-by-uri', filePath, uri, destPath),
     cztrSummary: (filePath: string) => ipcRenderer.invoke('cztr:summary', filePath),
+    // Terrain Generator API
+    checkJava: () => ipcRenderer.invoke('terrain-gen:check-java'),
+    downloadJdk: () => ipcRenderer.invoke('terrain-gen:download-jdk'),
+    downloadJar: () => ipcRenderer.invoke('terrain-gen:download-jar'),
+    onGenDownloadProgress: (cb: (p: DownloadProgress) => void) => {
+      const handler = (_event: unknown, p: unknown) => cb(p as DownloadProgress)
+      ipcRenderer.on('terrain-gen:download-progress', handler)
+      return () => { ipcRenderer.removeListener('terrain-gen:download-progress', handler) }
+    },
+    onGenDownloadComplete: (cb: (result: DownloadResult) => void) => {
+      const handler = (_event: unknown, result: unknown) => cb(result as DownloadResult)
+      ipcRenderer.on('terrain-gen:download-complete', handler)
+      return () => { ipcRenderer.removeListener('terrain-gen:download-complete', handler) }
+    },
   })
 } catch (err) {
   console.error('preload 暴露 API 失败:', err)
