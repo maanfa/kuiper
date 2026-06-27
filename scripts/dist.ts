@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process'
+import { execSync, execFileSync } from 'node:child_process'
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -15,16 +15,25 @@ execSync('electron-vite build', { stdio: 'inherit' })
 
 // 解决 Windows 下 electron-builder 内部 shell 调用时路径含空格导致截断的问题
 if (process.platform === 'win32') {
-  const binDir = join(tmpdir(), 'kuiper-electron-builder-bin')
-  mkdirSync(binDir, { recursive: true })
+  let pnpmPath = 'pnpm'
+  try {
+    pnpmPath = execSync('where pnpm', { encoding: 'utf-8' }).split('\n')[0].trim()
+  } catch {
+    // use default
+  }
 
-  writeFileSync(
-    join(binDir, 'pnpm.cmd'),
-    '@C:\\PROGRA~1\\Volta\\pnpm.exe %*',
-    'utf-8',
-  )
+  if (pnpmPath.includes(' ')) {
+    const binDir = join(tmpdir(), 'kuiper-electron-builder-bin')
+    mkdirSync(binDir, { recursive: true })
 
-  process.env.PATH = `${binDir};${process.env.PATH}`
+    writeFileSync(
+      join(binDir, 'pnpm.cmd'),
+      `@"${pnpmPath}" %*`,
+      'utf-8',
+    )
+
+    process.env.PATH = `${binDir};${process.env.PATH}`
+  }
 }
 
 const root = resolve(import.meta.dirname!, '..')
