@@ -264,6 +264,11 @@ interface RunningTaskInfo {
   label: string
 }
 
+/** 服务状态变更事件 */
+interface ServerStatusChangedEvent {
+  running: boolean
+}
+
 /** 暴露到渲染进程的 Electron API */
 interface ElectronAPI {
   getConfig: () => Promise<AppConfig>
@@ -279,6 +284,7 @@ interface ElectronAPI {
   onTaskProgress: (cb: (p: TileProgress) => void) => () => void
   onTaskComplete: (cb: (result: TileOpResult) => void) => () => void
   taskList: () => Promise<RunningTaskInfo[]>
+  onTaskListChanged: (cb: (list: RunningTaskInfo[]) => void) => () => void
   // Server API
   serverStart: (config: ServerConfig) => Promise<ServerOpResult>
   serverStop: () => Promise<ServerOpResult>
@@ -287,6 +293,7 @@ interface ElectronAPI {
   serverPoolStatus: () => Promise<PoolStatus | null>
   onServerClosePrompt: (cb: () => void) => () => void
   sendServerCloseResult: (confirmed: boolean) => void
+  onServerStatusChanged: (cb: (data: ServerStatusChangedEvent) => void) => () => void
   onServerLog: (cb: (entry: ServerLogEntry) => void) => () => void
   // Static File Server API
   staticFileServerStart: (config: StaticFileServerConfig) => Promise<ServerOpResult>
@@ -294,6 +301,7 @@ interface ElectronAPI {
   staticFileServerStatus: () => Promise<'running' | 'stopped'>
   onStaticFileServerClosePrompt: (cb: () => void) => () => void
   sendStaticFileServerCloseResult: (confirmed: boolean) => void
+  onStaticFileServerStatusChanged: (cb: (data: ServerStatusChangedEvent) => void) => () => void
   onStaticFileServerLog: (cb: (entry: ServerLogEntry) => void) => () => void
   // Dialog API
   openDirectory: () => Promise<string | null>

@@ -13,7 +13,6 @@ import { useServerRuntimeStore } from '../stores/serverRuntime'
 const ui = useUiStore()
 const serverRuntime = useServerRuntimeStore()
 const logRef = ref<InstanceType<typeof LogOutput> | null>(null)
-const serverRunning = ref(false)
 const serverConfig = ref<StaticFileServerConfig>({
   port: 9357,
   prefix: '/',
@@ -29,20 +28,26 @@ const serverUrl = computed(() =>
 let unlog: (() => void) | null = null
 let unclose: (() => void) | null = null
 
+function subscribeLog() {
+  unlog = window.electronAPI.onStaticFileServerLog((entry: ServerLogEntry) => {
+    const level = entry.status >= 500 ? 'error' : entry.status >= 400 ? 'warn' : 'info'
+    const msg = `${entry.method} ${entry.path} \u2192 ${entry.status} (${entry.duration}ms)`
+    logRef.value?.addLog(level, msg, entry.timestamp)
+  })
+}
+
+function cleanupLog() {
+  unlog?.()
+  unlog = null
+}
+
 onMounted(async () => {
   const cfg = await window.electronAPI.getConfig()
   if (cfg.staticFileServer) {
     serverConfig.value = cfg.staticFileServer
   }
-  const status = await window.electronAPI.staticFileServerStatus()
-  serverRunning.value = status === 'running'
-  if (serverRunning.value) {
-    serverRuntime.markServerRunning('static-file')
-    unlog = window.electronAPI.onStaticFileServerLog((entry: ServerLogEntry) => {
-      const level = entry.status >= 500 ? 'error' : entry.status >= 400 ? 'warn' : 'info'
-      const msg = `${entry.method} ${entry.path} \u2192 ${entry.status} (${entry.duration}ms)`
-      logRef.value?.addLog(level, msg, entry.timestamp)
-    })
+  if (serverRuntime.staticFileServerRunning) {
+    subscribeLog()
   }
 
   unclose = window.electronAPI.onStaticFileServerClosePrompt(() => {
@@ -51,18 +56,16 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  unlog?.()
+  cleanupLog()
   unclose?.()
 })
 
-// 监听 store 变化：外部（任务中心）停止服务时同步本地状态
+// 监听 store：外部停止服务时清理侧效
 watch(
   () => serverRuntime.staticFileServerRunning,
   (running) => {
-    if (!running && serverRunning.value) {
-      serverRunning.value = false
-      unlog?.()
-      unlog = null
+    if (!running) {
+      cleanupLog()
       logRef.value?.addLog('info', '服务已停止')
     }
   },
@@ -89,14 +92,8 @@ async function handleStart() {
   const config = JSON.parse(JSON.stringify(serverConfig.value))
   const result = await window.electronAPI.staticFileServerStart(config)
   if (result.success) {
-    serverRunning.value = true
-    serverRuntime.markServerRunning('static-file')
+    subscribeLog()
     ui.flashStatusText('服务已启动')
-    unlog = window.electronAPI.onStaticFileServerLog((entry: ServerLogEntry) => {
-      const level = entry.status >= 500 ? 'error' : entry.status >= 400 ? 'warn' : 'info'
-      const msg = `${entry.method} ${entry.path} \u2192 ${entry.status} (${entry.duration}ms)`
-      logRef.value?.addLog(level, msg, entry.timestamp)
-    })
     logRef.value?.addLog('info', `服务已启动，监听 http://localhost:${config.port}${config.prefix}`)
     logRef.value?.addLog('info', `根目录: ${config.rootDir}`)
   } else {
@@ -107,10 +104,7 @@ async function handleStart() {
 async function handleStop() {
   const result = await window.electronAPI.staticFileServerStop()
   if (result.success) {
-    serverRunning.value = false
-    serverRuntime.markServerStopped('static-file')
-    unlog?.()
-    unlog = null
+    cleanupLog()
     ui.flashStatusText('服务已停止')
     logRef.value?.addLog('info', '服务已停止')
   } else {
@@ -130,7 +124,7 @@ async function handleStop() {
               quaternary
               circle
               size="small"
-              :disabled="!serverRunning"
+              :disabled="!serverRuntime.staticFileServerRunning"
               @click="openBrowser"
             >
               <template #icon>
@@ -154,7 +148,7 @@ async function handleStop() {
         <div class="left-panel">
           <StaticFileServerConfigPanel
             :server-config="serverConfig"
-            :server-running="serverRunning"
+            :server-running="serverRuntime.staticFileServerRunning"
             @update:server-config="onConfigChange"
             @start="handleStart"
             @stop="handleStop"

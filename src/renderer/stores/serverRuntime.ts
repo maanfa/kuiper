@@ -5,21 +5,20 @@ export const useServerRuntimeStore = defineStore('serverRuntime', () => {
   const staticServerRunning = ref(false)
   const staticFileServerRunning = ref(false)
 
-  function markServerRunning(type: 'static' | 'static-file'): void {
-    if (type === 'static') {
-      staticServerRunning.value = true
-    } else {
-      staticFileServerRunning.value = true
-    }
+  // 初始化：查询当前状态
+  const api = window.electronAPI
+  if (api) {
+    api.serverStatus().then((s) => { staticServerRunning.value = s === 'running' })
+    api.staticFileServerStatus().then((s) => { staticFileServerRunning.value = s === 'running' })
+
+    // 订阅主进程推送的状态变更
+    api.onServerStatusChanged((data) => {
+      staticServerRunning.value = data.running
+    })
+    api.onStaticFileServerStatusChanged((data) => {
+      staticFileServerRunning.value = data.running
+    })
   }
 
-  function markServerStopped(type: 'static' | 'static-file'): void {
-    if (type === 'static') {
-      staticServerRunning.value = false
-    } else {
-      staticFileServerRunning.value = false
-    }
-  }
-
-  return { staticServerRunning, staticFileServerRunning, markServerRunning, markServerStopped }
+  return { staticServerRunning, staticFileServerRunning }
 })

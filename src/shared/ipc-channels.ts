@@ -8,6 +8,7 @@ export const IPC = {
   TASK_PROGRESS: 'task:progress',
   TASK_COMPLETE: 'task:complete',
   TASK_LIST: 'task:list',
+  TASK_LIST_CHANGED: 'task:list-changed',
 
   // Static server
   SERVER_START: 'server:start',
@@ -18,6 +19,7 @@ export const IPC = {
   SERVER_POOL_STATUS: 'server:pool-status',
   SERVER_CLOSE_PROMPT: 'server:close-prompt',
   SERVER_CLOSE_RESULT: 'server:close-result',
+  SERVER_STATUS_CHANGED: 'server:status-changed',
 
   // Static file server
   STATIC_FILE_SERVER_START: 'static-file-server:start',
@@ -26,6 +28,7 @@ export const IPC = {
   STATIC_FILE_SERVER_LOG: 'static-file-server:log',
   STATIC_FILE_SERVER_CLOSE_PROMPT: 'static-file-server:close-prompt',
   STATIC_FILE_SERVER_CLOSE_RESULT: 'static-file-server:close-result',
+  STATIC_FILE_SERVER_STATUS_CHANGED: 'static-file-server:status-changed',
 
   // Dialog
   DIALOG_OPEN_DIR: 'dialog:openDirectory',

@@ -35,6 +35,17 @@ export class TaskManager {
     return Array.from(this.tasks.values())
   }
 
+  /** 推送任务列表变更到渲染进程 */
+  pushTaskListChanged(): void {
+    if (!this.win) return
+    const list = this.getTasks().map((t) => ({
+      taskId: t.id,
+      type: t.type,
+      label: formatTaskLabel(t.type, t.id),
+    }))
+    this.win.webContents.send(IPC.TASK_LIST_CHANGED, list)
+  }
+
   start(config: TaskConfig): string {
     const taskId = randomUUID()
 
@@ -110,6 +121,7 @@ export class TaskManager {
     task.on('complete', (result) => {
       this.win?.webContents.send(IPC.TASK_COMPLETE, result)
       this.tasks.delete(taskId)
+      this.pushTaskListChanged()
     })
   }
 
@@ -118,6 +130,19 @@ export class TaskManager {
     if (!task || task.status !== 'running') return false
     task.cancel()
     this.tasks.delete(taskId)
+    this.pushTaskListChanged()
     return true
   }
+}
+
+function formatTaskLabel(type: string, taskId: string): string {
+  const short = taskId.slice(0, 8)
+  const map: Record<string, string> = {
+    'pack': `地形打包 [${short}]`,
+    'unpack': `地形解包 [${short}]`,
+    'tileset-pack': `3DTiles打包 [${short}]`,
+    'tileset-unpack': `3DTiles解包 [${short}]`,
+    'terrain-gen': `地形生成 [${short}]`,
+  }
+  return map[type] || `${type} [${short}]`
 }

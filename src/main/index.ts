@@ -337,7 +337,9 @@ function registerIpcHandlers(): void {
 
   // Task API
   ipcMain.handle(IPC.TASK_START, (_event, config) => {
-    return taskManager.start(config)
+    const taskId = taskManager.start(config)
+    taskManager.pushTaskListChanged()
+    return taskId
   })
 
   ipcMain.handle(IPC.TASK_CANCEL, (_event, taskId: string) => {
@@ -362,6 +364,7 @@ function registerIpcHandlers(): void {
         win?.webContents.send(IPC.SERVER_LOG, entry)
       })
       saveServerConfig(config)
+      win?.webContents.send(IPC.SERVER_STATUS_CHANGED, { running: true })
       logger?.info(`静态服务已启动，端口 ${config.port}`)
       return { success: true }
     } catch (err) {
@@ -374,6 +377,7 @@ function registerIpcHandlers(): void {
     try {
       staticServer?.stop()
       staticServer = null
+      win?.webContents.send(IPC.SERVER_STATUS_CHANGED, { running: false })
       logger?.info('静态服务已停止')
       return { success: true }
     } catch (err) {
@@ -409,6 +413,7 @@ function registerIpcHandlers(): void {
         win?.webContents.send(IPC.STATIC_FILE_SERVER_LOG, entry)
       })
       saveStaticFileServerConfig(config)
+      win?.webContents.send(IPC.STATIC_FILE_SERVER_STATUS_CHANGED, { running: true })
       logger?.info(`静态文件服务已启动，端口 ${config.port}，根目录 ${config.rootDir}`)
       return { success: true }
     } catch (err) {
@@ -421,6 +426,7 @@ function registerIpcHandlers(): void {
     try {
       staticFileServer?.stop()
       staticFileServer = null
+      win?.webContents.send(IPC.STATIC_FILE_SERVER_STATUS_CHANGED, { running: false })
       logger?.info('静态文件服务已停止')
       return { success: true }
     } catch (err) {

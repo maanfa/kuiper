@@ -22,7 +22,7 @@ const taskCount = ref(0)
 const appTitle = computed(() => isPackaged.value ? '柯伊伯方盒' : '柯伊伯方盒 - [DevMode]')
 
 let cleanupMaximize: (() => void) | null = null
-let taskListTimer: ReturnType<typeof setInterval> | null = null
+let cleanupTaskList: (() => void) | null = null
 
 async function refreshTaskCount() {
   try {
@@ -51,15 +51,14 @@ onMounted(async () => {
   })
 
   refreshTaskCount()
-  taskListTimer = setInterval(refreshTaskCount, 3000)
+  cleanupTaskList = api.onTaskListChanged((list) => {
+    taskCount.value = list.length
+  })
 })
 
 onUnmounted(() => {
   cleanupMaximize?.()
-  if (taskListTimer) {
-    clearInterval(taskListTimer)
-    taskListTimer = null
-  }
+  cleanupTaskList?.()
 })
 
 function handleMinimize() {

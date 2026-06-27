@@ -12,7 +12,6 @@ import { useServerRuntimeStore } from '../stores/serverRuntime'
 const ui = useUiStore()
 const serverRuntime = useServerRuntimeStore()
 const logRef = ref<InstanceType<typeof LogOutput> | null>(null)
-const serverRunning = ref(false)
 const serverConfig = ref<ServerConfig>({
   port: 9356,
   prefix: '/files',
@@ -42,42 +41,46 @@ function stopPoolPolling() {
   poolStatus.value = null
 }
 
+function subscribeLog() {
+  unlog = window.electronAPI.onServerLog((entry: ServerLogEntry) => {
+    if (!entry.method) {
+      logRef.value?.addLog('warn', `[连接池] ${entry.path}`, entry.timestamp)
+      return
+    }
+    const level = entry.status >= 500 ? 'error' : entry.status >= 400 ? 'warn' : 'info'
+    const fid = entry.fileId ? ` [${entry.fileId.slice(0, 8)}]` : ''
+    const msg = `${entry.method} ${entry.path} \u2192 ${entry.status} (${entry.duration}ms)${fid}`
+    logRef.value?.addLog(level, msg, entry.timestamp)
+  })
+}
+
+function cleanupLog() {
+  unlog?.()
+  unlog = null
+}
+
 onMounted(async () => {
   const cfg = await window.electronAPI.getConfig()
   if (cfg.server) {
     serverConfig.value = cfg.server
   }
-  const status = await window.electronAPI.serverStatus()
-  serverRunning.value = status === 'running'
-  if (serverRunning.value) {
-    serverRuntime.markServerRunning('static')
+  if (serverRuntime.staticServerRunning) {
+    subscribeLog()
     startPoolPolling()
-    unlog = window.electronAPI.onServerLog((entry: ServerLogEntry) => {
-      if (!entry.method) {
-        logRef.value?.addLog('warn', `[连接池] ${entry.path}`, entry.timestamp)
-        return
-      }
-      const level = entry.status >= 500 ? 'error' : entry.status >= 400 ? 'warn' : 'info'
-      const fid = entry.fileId ? ` [${entry.fileId.slice(0, 8)}]` : ''
-      const msg = `${entry.method} ${entry.path} \u2192 ${entry.status} (${entry.duration}ms)${fid}`
-      logRef.value?.addLog(level, msg, entry.timestamp)
-    })
   }
 })
 
 onUnmounted(() => {
-  unlog?.()
+  cleanupLog()
   stopPoolPolling()
 })
 
-// 监听 store 变化：外部（任务中心）停止服务时同步本地状态
+// 监听 store：外部停止服务时清理侧效（日志取消、连接池停轮询）
 watch(
   () => serverRuntime.staticServerRunning,
   (running) => {
-    if (!running && serverRunning.value) {
-      serverRunning.value = false
-      unlog?.()
-      unlog = null
+    if (!running) {
+      cleanupLog()
       stopPoolPolling()
       logRef.value?.addLog('info', '服务已停止')
     }
@@ -96,20 +99,9 @@ async function handleStart() {
   const config = JSON.parse(JSON.stringify(serverConfig.value))
   const result = await window.electronAPI.serverStart(config)
   if (result.success) {
-    serverRunning.value = true
-    serverRuntime.markServerRunning('static')
+    subscribeLog()
     startPoolPolling()
     ui.flashStatusText('服务已启动')
-    unlog = window.electronAPI.onServerLog((entry: ServerLogEntry) => {
-      if (!entry.method) {
-        logRef.value?.addLog('warn', `[连接池] ${entry.path}`, entry.timestamp)
-        return
-      }
-      const level = entry.status >= 500 ? 'error' : entry.status >= 400 ? 'warn' : 'info'
-      const fid = entry.fileId ? ` [${entry.fileId.slice(0, 8)}]` : ''
-      const msg = `${entry.method} ${entry.path} \u2192 ${entry.status} (${entry.duration}ms)${fid}`
-      logRef.value?.addLog(level, msg, entry.timestamp)
-    })
     logRef.value?.addLog('info', `服务已启动，监听 http://localhost:${serverConfig.value.port}${serverConfig.value.prefix}`)
   } else {
     ui.flashStatusText(`启动失败: ${result.error}`)
@@ -119,10 +111,7 @@ async function handleStart() {
 async function handleStop() {
   const result = await window.electronAPI.serverStop()
   if (result.success) {
-    serverRunning.value = false
-    serverRuntime.markServerStopped('static')
-    unlog?.()
-    unlog = null
+    cleanupLog()
     stopPoolPolling()
     ui.flashStatusText('服务已停止')
     logRef.value?.addLog('info', '服务已停止')
@@ -143,7 +132,7 @@ async function handleStop() {
               quaternary
               circle
               size="small"
-              :disabled="!serverRunning"
+              :disabled="!serverRuntime.staticServerRunning"
               @click="openBrowser"
             >
               <template #icon>
@@ -167,7 +156,7 @@ async function handleStop() {
         <div class="left-panel">
           <ServerConfigPanel
             :server-config="serverConfig"
-            :server-running="serverRunning"
+            :server-running="serverRuntime.staticServerRunning"
             :pool-status="poolStatus"
             @update:server-config="onConfigChange"
             @start="handleStart"

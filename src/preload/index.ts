@@ -33,6 +33,11 @@ try {
       return () => { ipcRenderer.removeListener('task:complete', handler) }
     },
     taskList: () => ipcRenderer.invoke('task:list'),
+    onTaskListChanged: (cb: (list: unknown) => void) => {
+      const handler = (_event: unknown, list: unknown) => cb(list)
+      ipcRenderer.on('task:list-changed', handler)
+      return () => { ipcRenderer.removeListener('task:list-changed', handler) }
+    },
     // Server API
     serverStart: (config: unknown) => ipcRenderer.invoke('server:start', config),
     serverStop: () => ipcRenderer.invoke('server:stop'),
@@ -46,6 +51,11 @@ try {
     },
     sendServerCloseResult: (confirmed: boolean) => {
       ipcRenderer.send('server:close-result', confirmed)
+    },
+    onServerStatusChanged: (cb: (data: unknown) => void) => {
+      const handler = (_event: unknown, data: unknown) => cb(data)
+      ipcRenderer.on('server:status-changed', handler)
+      return () => { ipcRenderer.removeListener('server:status-changed', handler) }
     },
     onServerLog: (cb: (entry: unknown) => void) => {
       const handler = (_event: unknown, entry: unknown) => cb(entry)
@@ -63,6 +73,11 @@ try {
     },
     sendStaticFileServerCloseResult: (confirmed: boolean) => {
       ipcRenderer.send('static-file-server:close-result', confirmed)
+    },
+    onStaticFileServerStatusChanged: (cb: (data: unknown) => void) => {
+      const handler = (_event: unknown, data: unknown) => cb(data)
+      ipcRenderer.on('static-file-server:status-changed', handler)
+      return () => { ipcRenderer.removeListener('static-file-server:status-changed', handler) }
     },
     onStaticFileServerLog: (cb: (entry: unknown) => void) => {
       const handler = (_event: unknown, entry: unknown) => cb(entry)
