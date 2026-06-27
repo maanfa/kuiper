@@ -21,6 +21,7 @@
 | 项目约定 | [docs/conventions/project/project-conventions.md](docs/conventions/project/project-conventions.md) |
 | 日志系统 | [docs/conventions/project/logging.md](docs/conventions/project/logging.md) |
 | 前端工具函数 | [docs/conventions/project/utility-functions.md](docs/conventions/project/utility-functions.md) |
+| 提交约定 | [docs/conventions/project/commit-conventions.md](docs/conventions/project/commit-conventions.md) |
 | **Agent 协作** | |
 | Plan 输出规范 | [docs/conventions/agent/plan-output.md](docs/conventions/agent/plan-output.md) |
 | 沟通约定 | [docs/conventions/agent/communication.md](docs/conventions/agent/communication.md) |
