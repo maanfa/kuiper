@@ -39,14 +39,14 @@ if (process.platform === 'win32') {
 const root = resolve(import.meta.dirname!, '..')
 
 // 仅生成解包目录（不生成安装包），以便在签名/打包前嵌入图标
-execSync('electron-builder --win --dir', { stdio: 'inherit' })
+execSync('electron-builder --win --dir --publish never', { stdio: 'inherit' })
 
 // 嵌入 exe 图标（electron-builder 的 winCodeSign 提取在 Windows 普通权限下会失败）
 execSync('tsx scripts/set-exe-icon.ts', { stdio: 'inherit' })
 
 // 从已嵌入图标的解包目录生成 NSIS 安装包
 execSync(
-  `electron-builder --win --prepackaged "${resolve(root, 'release', 'win-unpacked')}"`,
+  `electron-builder --win --prepackaged "${resolve(root, 'release', 'win-unpacked')}" --publish never`,
   { stdio: 'inherit' },
 )
 
