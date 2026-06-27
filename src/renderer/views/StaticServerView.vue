@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { NButton, NIcon, NTooltip } from 'naive-ui'
 import { OpenOutline } from '@vicons/ionicons5'
 import VerticalSplit from '../components/layout/VerticalSplit.vue'
@@ -69,6 +69,20 @@ onUnmounted(() => {
   unlog?.()
   stopPoolPolling()
 })
+
+// 监听 store 变化：外部（任务中心）停止服务时同步本地状态
+watch(
+  () => serverRuntime.staticServerRunning,
+  (running) => {
+    if (!running && serverRunning.value) {
+      serverRunning.value = false
+      unlog?.()
+      unlog = null
+      stopPoolPolling()
+      logRef.value?.addLog('info', '服务已停止')
+    }
+  },
+)
 
 function openBrowser() {
   window.electronAPI.openExternal(serverUrl.value)
