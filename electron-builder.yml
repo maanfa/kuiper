@@ -10,7 +10,6 @@ win:
     - target: nsis
       arch:
         - x64
-  signAndEditExecutable: false
 extraResources:
   - from: resources/icon.png
     to: icon.png
@@ -22,3 +21,5 @@ nsis:
   artifactName: 'KuiperBox-setup-${os}-${arch}-${version}.${ext}'
 files:
   - out/**/*
+  - package.json
+  - "!node_modules"
