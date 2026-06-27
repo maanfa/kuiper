@@ -39,8 +39,29 @@ jobs:
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
+          name: ${{ github.ref_name }}
           files: |
             release/KuiperBox-setup-win-x64-*.exe
             release/KuiperBox-portable-win-x64-*.7z
+          body: |
+            ## 功能
+
+            - **地形切片生成器** — GeoTIFF 高程数据转换为 Cesium Quantized Mesh 瓦片
+            - **地形切片转换器** — 瓦片目录与 `.cztr` 容器互转
+            - **3DTiles 转换器** — 3DTiles 数据集与 `.czts` 容器互转
+            - **文件查看器** — 浏览 `.cztr` / `.czts` 文件内容
+            - **静态托管服务** — 将容器文件以 RESTful API 形式暴露 HTTP 服务
+            - **静态文件服务** — 本地目录 HTTP 文件托管
+            - **任务中心** — 统一管理后台任务和服务
+
+            ## 系统要求
+
+            - Windows 10 / Windows 11
+            - 地形切片生成器需 JDK 21+（应用内可一键下载）
+
+            ## 下载
+
+            - `KuiperBox-setup-win-x64-{version}.exe` — NSIS 安装包
+            - `KuiperBox-portable-win-x64-{version}.7z` — 便携版
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
