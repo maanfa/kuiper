@@ -6,20 +6,20 @@
 
 | 主题 | 文档 |
 |------|------|
-| 代码风格 | [docs/code-style.md](docs/code-style.md) |
-| 技术栈 | [docs/tech-stack.md](docs/tech-stack.md) |
-| 前端组件约定 | [docs/component-conventions.md](docs/component-conventions.md) |
-| 组件命名规范 | [docs/component-naming.md](docs/component-naming.md) |
-| 项目约定 | [docs/project-conventions.md](docs/project-conventions.md) |
-| 主进程特性 | [docs/main-process.md](docs/main-process.md) |
-| 日志系统 | [docs/logging.md](docs/logging.md) |
-| 文件格式约定 | [docs/file-formats.md](docs/file-formats.md) |
-| 任务系统 | [docs/task-system.md](docs/task-system.md) |
-| 前端工具函数 | [docs/utility-functions.md](docs/utility-functions.md) |
-| 主进程服务器模式 | [docs/server-mode.md](docs/server-mode.md) |
-| VerticalSplit 组件规范 | [docs/vertical-split.md](docs/vertical-split.md) |
-| Plan 输出规范 | [docs/plan-output.md](docs/plan-output.md) |
-| 沟通约定 | [docs/communication.md](docs/communication.md) |
+| 代码风格 | [docs/conventions/code-style.md](docs/conventions/code-style.md) |
+| 技术栈 | [docs/conventions/tech-stack.md](docs/conventions/tech-stack.md) |
+| 前端组件约定 | [docs/conventions/component-conventions.md](docs/conventions/component-conventions.md) |
+| 组件命名规范 | [docs/conventions/component-naming.md](docs/conventions/component-naming.md) |
+| 项目约定 | [docs/conventions/project-conventions.md](docs/conventions/project-conventions.md) |
+| 主进程特性 | [docs/conventions/main-process.md](docs/conventions/main-process.md) |
+| 日志系统 | [docs/conventions/logging.md](docs/conventions/logging.md) |
+| 文件格式约定 | [docs/conventions/file-formats.md](docs/conventions/file-formats.md) |
+| 任务系统 | [docs/conventions/task-system.md](docs/conventions/task-system.md) |
+| 前端工具函数 | [docs/conventions/utility-functions.md](docs/conventions/utility-functions.md) |
+| 主进程服务器模式 | [docs/conventions/server-mode.md](docs/conventions/server-mode.md) |
+| VerticalSplit 组件规范 | [docs/conventions/vertical-split.md](docs/conventions/vertical-split.md) |
+| Plan 输出规范 | [docs/conventions/plan-output.md](docs/conventions/plan-output.md) |
+| 沟通约定 | [docs/conventions/communication.md](docs/conventions/communication.md) |
 
 ## 其他参考
 
