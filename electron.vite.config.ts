@@ -29,7 +29,8 @@ function cjsOverridePlugin(): Plugin {
 
 /** 屏蔽 Rolldown 对 vueuse 等第三方包中位置不当的 #__PURE__ 注释产生的 [INVALID_ANNOTATION] 警告 */
 function suppressInvalidAnnotation() {
-  return (level: string, log: { code: string | null }, handler: (level: string, log: unknown) => void) => {
+  return (...args: unknown[]) => {
+    const [level, log, handler] = args as [string, { code?: string }, (level: unknown, log: unknown) => void]
     if (log.code === 'INVALID_ANNOTATION') return
     handler(level, log)
   }
