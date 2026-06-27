@@ -183,7 +183,7 @@ async function browseJar(): Promise<void> {
               />
             </div>
             <NText depth="3" style="font-size: 11px">
-              若未配置，进入地形切片生成器页面时会自动扫描 resources 目录和系统 PATH 中的 JDK 21。
+              若未配置，进入地形切片生成器页面时会自动扫描 resources 目录和系统 PATH 中的 JDK（需要 17 或更高版本）。
             </NText>
           </NSpace>
         </NCard>

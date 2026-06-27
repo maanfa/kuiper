@@ -21,7 +21,7 @@ export const ALL_TOOLS: ToolDefinition[] = [
     id: 'terrain-tile',
     title: '地形切片生成器',
     description:
-      '支持全球高程数据的多级切片处理，可高效生成 TMS/WMTS 标准瓦片，适用于 Cesium、Mapbox 等三维地球引擎的地形渲染场景。',
+      '基于 mago-3d-terrainer，将 GeoTIFF 高程数据转换为多级地形瓦片，支持 TMS 标准，可用于 Cesium 等三维引擎的地形渲染。',
     route: '/terrain-tile',
     category: 'processor',
   },

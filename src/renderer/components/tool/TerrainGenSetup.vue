@@ -146,7 +146,7 @@ function openGithubReleases(): void {
             <NIcon v-else color="#f0a020" size="18">
               <WarningOutline />
             </NIcon>
-            <NText strong>JDK 21</NText>
+            <NText strong>JDK</NText>
             <NText v-if="props.javaVersion" depth="3" style="font-size: 12px">
               ({{ props.javaVersion }})
             </NText>
@@ -166,7 +166,7 @@ function openGithubReleases(): void {
 
           <template v-if="!props.jdkReady">
             <NText depth="3" style="font-size: 12px; margin-bottom: 6px">
-              未检测到可用的 JDK 21，可点击下方按钮自动下载
+              未检测到可用的 JDK（需要 17 或更高版本），可点击下方按钮自动下载 Microsoft JDK 21
             </NText>
             <NText
               v-if="props.jdkError"
