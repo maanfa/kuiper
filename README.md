@@ -2,6 +2,8 @@
 
 基于 Electron + Vue 3 + Naive UI 的桌面工具集，提供地形切片生成/转换、3DTiles 转换、静态文件托管、SQLite 文件浏览等地理信息数据处理功能。
 
+<img src="docs/assets/app.webp" alt="界面截图" width="100%" style="max-width:100%;border-radius:12px;border:1px solid #d0d7de;overflow:hidden">
+
 ## 平台兼容性
 
 当前仅在 **Windows 10 / Windows 11** 上完成完整测试并确认可用。macOS 理论上可编译运行，但尚未进行兼容性验证，相关路径处理（Windows 风格反斜杠、PowerShell 解压等）可能存在适配问题，需自行测试。
