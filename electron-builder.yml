@@ -10,6 +10,7 @@ win:
     - target: nsis
       arch:
         - x64
+  signAndEditExecutable: false
 extraResources:
   - from: resources/icon.png
     to: icon.png

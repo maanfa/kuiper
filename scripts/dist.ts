@@ -29,6 +29,9 @@ if (process.platform === 'win32') {
 
 execSync('electron-builder --win', { stdio: 'inherit' })
 
+// 嵌入 exe 图标（electron-builder 的 winCodeSign 提取在 Windows 普通权限下会失败）
+execSync('tsx scripts/set-exe-icon.ts', { stdio: 'inherit' })
+
 // 将解包目录打包为 7z 便携版
 const root = resolve(import.meta.dirname!, '..')
 const pkg = require(resolve(root, 'package.json'))
